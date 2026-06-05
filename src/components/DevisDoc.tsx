@@ -7,7 +7,8 @@ interface DevisDocProps {
 function fmt(n: number | string | ""): string {
   const num = parseFloat(String(n)) || 0;
   if (num === 0) return "";
-  return num.toLocaleString("fr-FR");
+  // Séparateur de milliers avec point (ex: 455.000)
+  return num.toLocaleString("fr-FR").replace(/ | | /g, ".");
 }
 
 function formatDate(d: string): string {
@@ -28,12 +29,11 @@ export default function DevisDoc({ devis }: DevisDocProps) {
   const mo = parseFloat(String(devis.main_oeuvre)) || 0;
   const total = totalMat + mo;
 
-  const num = devis.num_devis || "___";
+  const num = "536HG/SC";
   const dateStr = formatDate(devis.date_devis);
+  // "2026-06-05" → "05/06/2026"
   const dateDisplay = devis.date_devis
-    ? devis.date_devis.split("-").reverse().slice(1).join("/") +
-      "/" +
-      devis.date_devis.split("-")[0]
+    ? devis.date_devis.split("-").reverse().join("/")
     : "";
 
   const tdStyle: React.CSSProperties = {
@@ -218,11 +218,11 @@ export default function DevisDoc({ devis }: DevisDocProps) {
             <tr key={row.label}>
               <td
                 colSpan={4}
-                style={{ ...tdStyle, textAlign: "right", fontWeight: "bold" }}
+                style={{ ...tdStyle, textAlign: "right", fontWeight: "bold", color: "#8B0000" }}
               >
                 {row.label}
               </td>
-              <td style={{ ...tdStyle, textAlign: "right", fontWeight: "bold" }}>
+              <td style={{ ...tdStyle, textAlign: "right", fontWeight: "bold", color: "#8B0000" }}>
                 {row.value}
               </td>
             </tr>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import TopBar from "@/components/TopBar";
 import FormPanel from "@/components/FormPanel";
 import ChatPanel from "@/components/ChatPanel";
-import DevisDoc from "@/components/DevisDoc";
+import PreviewWrapper from "@/components/PreviewWrapper";
 import { DevisData, DevisUpdate } from "@/lib/types";
 
 function genId() {
@@ -49,31 +49,73 @@ function applyUpdate(current: DevisData, update: DevisUpdate): DevisData {
   return next;
 }
 
-type Tab = "chat" | "form";
+type SideTab = "chat" | "form";
+type MobileTab = "chat" | "form" | "preview";
 
 export default function Home() {
   const [devis, setDevis] = useState<DevisData>(initialDevis);
-  const [activeTab, setActiveTab] = useState<Tab>("chat");
+  const [sideTab, setSideTab] = useState<SideTab>("chat");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("chat");
 
   const handleUpdate = (update: DevisUpdate) => {
     setDevis((current) => applyUpdate(current, update));
   };
 
+  const mobileTabDef: { key: MobileTab; label: string }[] = [
+    { key: "chat", label: "✦ Chat" },
+    { key: "form", label: "⊞ Formulaire" },
+    { key: "preview", label: "◻ Aperçu" },
+  ];
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-app-bg">
       <TopBar onPrint={() => window.print()} />
 
-      <div className="flex flex-1 overflow-hidden">
+      {/* ── MOBILE layout (< md) ───────────────────────── */}
+      <div className="flex flex-col flex-1 overflow-hidden md:hidden no-print">
+        {/* Tab bar */}
+        <div className="flex border-b border-app-border bg-app-panel flex-shrink-0">
+          {mobileTabDef.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setMobileTab(key)}
+              className={`flex-1 py-2.5 text-[10px] font-bold tracking-[1px] uppercase transition-colors border-none cursor-pointer ${
+                mobileTab === key
+                  ? "text-gold border-b-2 border-gold bg-app-bg"
+                  : "text-app-muted bg-transparent"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {mobileTab === "chat" && (
+            <ChatPanel devis={devis} onUpdate={handleUpdate} />
+          )}
+          {mobileTab === "form" && (
+            <FormPanel devis={devis} onChange={setDevis} />
+          )}
+          {mobileTab === "preview" && (
+            <PreviewWrapper devis={devis} />
+          )}
+        </div>
+      </div>
+
+      {/* ── DESKTOP layout (≥ md) ──────────────────────── */}
+      <div className="hidden md:flex flex-1 overflow-hidden">
         {/* Left panel */}
-        <div className="no-print w-[380px] flex-shrink-0 bg-app-panel border-r border-app-border flex flex-col overflow-hidden">
+        <div className="no-print w-[300px] lg:w-[380px] flex-shrink-0 bg-app-panel border-r border-app-border flex flex-col overflow-hidden">
           {/* Tabs */}
           <div className="flex border-b border-app-border flex-shrink-0">
-            {(["chat", "form"] as Tab[]).map((tab) => (
+            {(["chat", "form"] as SideTab[]).map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => setSideTab(tab)}
                 className={`flex-1 py-3 text-[11px] font-bold tracking-[1.5px] uppercase transition-colors border-none cursor-pointer ${
-                  activeTab === tab
+                  sideTab === tab
                     ? "text-gold border-b-2 border-gold bg-app-bg"
                     : "text-app-muted hover:text-app-text bg-transparent"
                 }`}
@@ -83,21 +125,16 @@ export default function Home() {
             ))}
           </div>
 
-          {activeTab === "chat" ? (
+          {sideTab === "chat" ? (
             <ChatPanel devis={devis} onUpdate={handleUpdate} />
           ) : (
             <FormPanel devis={devis} onChange={setDevis} />
           )}
         </div>
 
-        {/* Preview */}
-        <div
-          className="flex-1 overflow-y-auto flex justify-center p-8"
-          style={{ background: "#f0ede8" }}
-        >
-          <div className="w-full max-w-[740px]">
-            <DevisDoc devis={devis} />
-          </div>
+        {/* Preview — always visible on desktop */}
+        <div className="flex-1 overflow-hidden">
+          <PreviewWrapper devis={devis} />
         </div>
       </div>
     </div>
