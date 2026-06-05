@@ -33,12 +33,22 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
     onChange({ ...devis, lignes: newLignes });
   };
 
-  const addLigne = () => {
+  const addSection = () => {
     onChange({
       ...devis,
       lignes: [
         ...devis.lignes,
-        { id: genId(), designation: "", unitaire: "", qte: "", montant: "" },
+        { id: genId(), type: "section", designation: "", unitaire: "", qte: "", montant: "" },
+      ],
+    });
+  };
+
+  const addItem = () => {
+    onChange({
+      ...devis,
+      lignes: [
+        ...devis.lignes,
+        { id: genId(), type: "item", designation: "", unitaire: "", qte: "", montant: "" },
       ],
     });
   };
@@ -69,22 +79,13 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
         <div className={sec}>Référence du devis</div>
         <div className="mb-3">
           <label className={lbl}>Numéro de devis</label>
-          <input
-            type="text"
-            className={inp}
-            placeholder="ex: 536HG/SC"
-            value={devis.num_devis}
-            onChange={(e) => update("num_devis", e.target.value)}
-          />
+          <input type="text" className={inp} placeholder="ex: 536HG/SC"
+            value={devis.num_devis} onChange={(e) => update("num_devis", e.target.value)} />
         </div>
         <div className="mb-3">
           <label className={lbl}>Date</label>
-          <input
-            type="date"
-            className={inp}
-            value={devis.date_devis}
-            onChange={(e) => update("date_devis", e.target.value)}
-          />
+          <input type="date" className={inp}
+            value={devis.date_devis} onChange={(e) => update("date_devis", e.target.value)} />
         </div>
       </div>
 
@@ -93,33 +94,18 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
         <div className={sec}>Client</div>
         <div className="mb-3">
           <label className={lbl}>Raison sociale / Nom</label>
-          <input
-            type="text"
-            className={inp}
-            placeholder="ex: Mr N'GUESSAN"
-            value={devis.client_nom}
-            onChange={(e) => update("client_nom", e.target.value)}
-          />
+          <input type="text" className={inp} placeholder="ex: Mr N'GUESSAN"
+            value={devis.client_nom} onChange={(e) => update("client_nom", e.target.value)} />
         </div>
         <div className="mb-3">
           <label className={lbl}>Contact</label>
-          <input
-            type="text"
-            className={inp}
-            placeholder="ex: 0505972493"
-            value={devis.client_contact}
-            onChange={(e) => update("client_contact", e.target.value)}
-          />
+          <input type="text" className={inp} placeholder="ex: 0505972493"
+            value={devis.client_contact} onChange={(e) => update("client_contact", e.target.value)} />
         </div>
         <div className="mb-3">
           <label className={lbl}>Objet des travaux</label>
-          <input
-            type="text"
-            className={inp}
-            placeholder="ex: Aménagement villa Bingerville"
-            value={devis.client_objet}
-            onChange={(e) => update("client_objet", e.target.value)}
-          />
+          <input type="text" className={inp} placeholder="ex: Aménagement villa Bingerville"
+            value={devis.client_objet} onChange={(e) => update("client_objet", e.target.value)} />
         </div>
       </div>
 
@@ -128,73 +114,86 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
         <div className={sec}>Nature des travaux</div>
         <div className="mb-3">
           <label className={lbl}>Intitulé du tableau</label>
-          <input
-            type="text"
-            className={inp}
-            placeholder="ex: FABRICATION ET POSE DE MEUBLE..."
-            value={devis.titre_travaux}
-            onChange={(e) => update("titre_travaux", e.target.value)}
-          />
+          <input type="text" className={inp} placeholder="ex: FABRICATION ET POSE DE MEUBLE..."
+            value={devis.titre_travaux} onChange={(e) => update("titre_travaux", e.target.value)} />
         </div>
       </div>
 
       {/* Lignes */}
       <div className="mb-7">
         <div className={sec}>Lignes du devis</div>
-        <div className="grid grid-cols-[2fr_80px_60px_80px_24px] gap-1.5 text-[10px] text-app-muted mb-1.5 tracking-[0.5px]">
-          <span>Désignation</span>
-          <span>Unitaire</span>
-          <span>Qté</span>
-          <span>Montant</span>
-          <span />
+
+        {(() => {
+          let secCount = 0;
+          return devis.lignes.map((l, i) => {
+            if (l.type === "section") {
+              secCount++;
+              const label = `A${secCount}`;
+              return (
+                <div key={l.id} className="flex gap-1.5 mb-2 items-center">
+                  <span className="text-[10px] font-bold text-gold w-6 flex-shrink-0 text-center">
+                    {label}
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Titre de la section..."
+                    className="flex-1 bg-app-bg border border-gold/40 text-gold font-montserrat text-[11px] font-bold italic px-2 py-1.5 outline-none focus:border-gold transition-colors"
+                    value={l.designation}
+                    onChange={(e) => updateLigne(i, "designation", e.target.value)}
+                  />
+                  <button
+                    onClick={() => removeLigne(i)}
+                    className="text-app-muted hover:text-red-500 text-lg leading-none transition-colors bg-transparent border-none cursor-pointer p-1 flex-shrink-0"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            }
+
+            // item
+            return (
+              <div
+                key={l.id}
+                className="grid grid-cols-[2fr_75px_55px_75px_24px] gap-1 mb-1 items-center pl-5"
+              >
+                <input type="text" placeholder="Désignation"
+                  className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
+                  value={l.designation} onChange={(e) => updateLigne(i, "designation", e.target.value)} />
+                <input type="number" placeholder="0"
+                  className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
+                  value={l.unitaire} onChange={(e) => updateLigne(i, "unitaire", e.target.value)} />
+                <input type="number" placeholder="1"
+                  className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
+                  value={l.qte} onChange={(e) => updateLigne(i, "qte", e.target.value)} />
+                <input type="number" placeholder="0"
+                  className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
+                  value={l.montant} onChange={(e) => updateLigne(i, "montant", e.target.value)} />
+                <button onClick={() => removeLigne(i)}
+                  className="text-app-muted hover:text-red-500 text-lg leading-none transition-colors bg-transparent border-none cursor-pointer p-1">
+                  ×
+                </button>
+              </div>
+            );
+          });
+        })()}
+
+        {/* Colonnes header pour items */}
+        <div className="grid grid-cols-[2fr_75px_55px_75px_24px] gap-1 text-[9px] text-app-muted mt-1 mb-2 pl-5 tracking-[0.5px]">
+          <span>Désignation</span><span>Unitaire</span><span>Qté</span><span>Montant</span><span />
         </div>
-        {devis.lignes.map((l, i) => (
-          <div
-            key={l.id}
-            className="grid grid-cols-[2fr_80px_60px_80px_24px] gap-1.5 mb-1.5 items-center"
-          >
-            <input
-              type="text"
-              placeholder="Désignation"
-              className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
-              value={l.designation}
-              onChange={(e) => updateLigne(i, "designation", e.target.value)}
-            />
-            <input
-              type="number"
-              placeholder="0"
-              className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
-              value={l.unitaire}
-              onChange={(e) => updateLigne(i, "unitaire", e.target.value)}
-            />
-            <input
-              type="number"
-              placeholder="1"
-              className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
-              value={l.qte}
-              onChange={(e) => updateLigne(i, "qte", e.target.value)}
-            />
-            <input
-              type="number"
-              placeholder="0"
-              className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
-              value={l.montant}
-              onChange={(e) => updateLigne(i, "montant", e.target.value)}
-            />
-            <button
-              onClick={() => removeLigne(i)}
-              className="text-app-muted hover:text-red-500 text-lg leading-none transition-colors bg-transparent border-none cursor-pointer p-1"
-            >
-              ×
-            </button>
-          </div>
-        ))}
-        <button
-          onClick={addLigne}
-          className="w-full border border-dashed border-app-border text-app-muted font-montserrat text-[11px] py-2 mt-1 cursor-pointer hover:border-gold hover:text-gold transition-colors bg-transparent"
-        >
-          + Ajouter une ligne
-        </button>
+
+        {/* Boutons ajout */}
+        <div className="flex gap-2 mt-2">
+          <button onClick={addSection}
+            className="flex-1 border border-dashed border-gold/50 text-gold font-montserrat text-[10px] font-bold py-2 cursor-pointer hover:border-gold transition-colors bg-transparent uppercase tracking-wider">
+            + Section
+          </button>
+          <button onClick={addItem}
+            className="flex-1 border border-dashed border-app-border text-app-muted font-montserrat text-[10px] py-2 cursor-pointer hover:border-gold hover:text-gold transition-colors bg-transparent">
+            + Article
+          </button>
+        </div>
 
         {/* Totaux */}
         <div className="bg-app-input border border-app-border p-3 mt-3.5">
@@ -203,21 +202,11 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
             <span>{fmtFull(totalMat)}</span>
           </div>
           <div className="grid grid-cols-[1fr_110px] gap-2 items-center mt-2.5">
-            <label className="text-app-muted text-[11px]">
-              Main d&apos;œuvre (FCFA)
-            </label>
-            <input
-              type="number"
-              placeholder="0"
+            <label className="text-app-muted text-[11px]">Main d&apos;œuvre (FCFA)</label>
+            <input type="number" placeholder="0"
               className="bg-app-bg border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
               value={devis.main_oeuvre}
-              onChange={(e) =>
-                update(
-                  "main_oeuvre",
-                  e.target.value === "" ? "" : parseFloat(e.target.value)
-                )
-              }
-            />
+              onChange={(e) => update("main_oeuvre", e.target.value === "" ? "" : parseFloat(e.target.value))} />
           </div>
           <div className="flex justify-between text-gold font-bold text-[13px] border-t border-app-border mt-2 pt-2">
             <span>TOTAL</span>
@@ -231,12 +220,10 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
         <div className={sec}>Montant en lettres</div>
         <div className="mb-3">
           <label className={lbl}>Arrêté à la somme de</label>
-          <textarea
-            className={`${inp} resize-y min-h-[60px]`}
+          <textarea className={`${inp} resize-y min-h-[60px]`}
             placeholder="ex: Six cent cinq mille Franc CFA"
             value={devis.montant_lettres}
-            onChange={(e) => update("montant_lettres", e.target.value)}
-          />
+            onChange={(e) => update("montant_lettres", e.target.value)} />
         </div>
       </div>
 
@@ -245,14 +232,9 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
         <div className={sec}>Conditions</div>
         <div className="mb-3">
           <label className={lbl}>% avance de démarrage</label>
-          <input
-            type="number"
-            className={inp}
+          <input type="number" className={inp}
             value={devis.avance_pct}
-            onChange={(e) =>
-              update("avance_pct", parseFloat(e.target.value) || 80)
-            }
-          />
+            onChange={(e) => update("avance_pct", parseFloat(e.target.value) || 80)} />
         </div>
       </div>
     </div>

@@ -195,21 +195,39 @@ export default function DevisDoc({ devis }: DevisDocProps) {
           </tr>
         </thead>
         <tbody>
-          {devis.lignes.map((l, i) => {
-            const hasContent = l.designation || l.unitaire || l.qte || l.montant;
-            if (!hasContent && devis.lignes.length > 1) return null;
-            return (
-              <tr key={l.id}>
-                <td style={{ ...tdStyle, textAlign: "center" }}>
-                  {i === 0 ? "A1" : `A${i + 1}`}
-                </td>
-                <td style={tdStyle}>{l.designation}</td>
-                <td style={{ ...tdStyle, textAlign: "center" }}>{fmt(l.unitaire)}</td>
-                <td style={{ ...tdStyle, textAlign: "center" }}>{l.qte || ""}</td>
-                <td style={{ ...tdStyle, textAlign: "right" }}>{fmt(l.montant)}</td>
-              </tr>
-            );
-          })}
+          {(() => {
+            let secCount = 0;
+            return devis.lignes.map((l) => {
+              if (l.type === "section") {
+                secCount++;
+                return (
+                  <tr key={l.id}>
+                    <td style={{ ...tdStyle, textAlign: "center", fontWeight: "bold", fontStyle: "italic" }}>
+                      A{secCount}
+                    </td>
+                    <td
+                      colSpan={4}
+                      style={{ ...tdStyle, fontWeight: "bold", fontStyle: "italic" }}
+                    >
+                      {l.designation}
+                    </td>
+                  </tr>
+                );
+              }
+              // item
+              const hasContent = l.designation || l.unitaire || l.qte || l.montant;
+              if (!hasContent && devis.lignes.length > 1) return null;
+              return (
+                <tr key={l.id}>
+                  <td style={{ ...tdStyle, textAlign: "center" }} />
+                  <td style={{ ...tdStyle, paddingLeft: "20px" }}>{l.designation}</td>
+                  <td style={{ ...tdStyle, textAlign: "center" }}>{fmt(l.unitaire)}</td>
+                  <td style={{ ...tdStyle, textAlign: "center" }}>{l.qte || ""}</td>
+                  <td style={{ ...tdStyle, textAlign: "right" }}>{fmt(l.montant)}</td>
+                </tr>
+              );
+            });
+          })()}
           {[
             { label: "TOTAL MATERIELS", value: fmt(totalMat) },
             { label: "MAIN D'ŒUVRE", value: fmt(mo) },

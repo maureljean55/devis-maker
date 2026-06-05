@@ -1,5 +1,6 @@
 export interface LigneDevis {
   id: string;
+  type: "section" | "item";
   designation: string;
   unitaire: number | "";
   qte: number | "";
@@ -31,7 +32,12 @@ export interface DevisUpdate {
   client_contact?: string | null;
   client_objet?: string | null;
   titre_travaux?: string | null;
-  lignes?: Array<{ designation: string; unitaire: number; qte: number }> | null;
+  lignes?: Array<{
+    type?: "section" | "item";
+    designation: string;
+    unitaire?: number;
+    qte?: number;
+  }> | null;
   main_oeuvre?: number | null;
   montant_lettres?: string | null;
   avance_pct?: number | null;

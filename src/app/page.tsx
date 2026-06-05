@@ -20,7 +20,7 @@ const initialDevis: DevisData = {
   client_contact: "",
   client_objet: "",
   titre_travaux: "",
-  lignes: [{ id: genId(), designation: "", unitaire: "", qte: "", montant: "" }],
+  lignes: [{ id: genId(), type: "item" as const, designation: "", unitaire: "", qte: "", montant: "" }],
   main_oeuvre: "",
   montant_lettres: "",
   avance_pct: 80,
@@ -40,10 +40,11 @@ function applyUpdate(current: DevisData, update: DevisUpdate): DevisData {
   if (update.lignes != null && update.lignes.length > 0) {
     next.lignes = update.lignes.map((l) => ({
       id: genId(),
+      type: l.type ?? "item",
       designation: l.designation || "",
-      unitaire: l.unitaire || "",
-      qte: l.qte || "",
-      montant: l.unitaire && l.qte ? l.unitaire * l.qte : "",
+      unitaire: l.type === "section" ? "" : (l.unitaire || ""),
+      qte: l.type === "section" ? "" : (l.qte || ""),
+      montant: l.type === "section" ? "" : (l.unitaire && l.qte ? l.unitaire * l.qte : ""),
     }));
   }
   return next;

@@ -18,21 +18,38 @@ Réponds TOUJOURS avec un JSON valide ayant exactement cette structure :
     "client_contact": "string ou null",
     "client_objet": "string ou null",
     "titre_travaux": "string ou null",
-    "lignes": [{"designation": "string", "unitaire": nombre, "qte": nombre}] ou null,
+    "lignes": [...] ou null,
     "main_oeuvre": nombre ou null,
-    "montant_lettres": "string ou en toutes lettres ou null",
+    "montant_lettres": "string en toutes lettres ou null",
     "avance_pct": nombre ou null
   }
 }
 
+STRUCTURE DES LIGNES — très important :
+Le tableau du devis supporte deux types de lignes :
+1. SECTION (type="section") : titre d'une catégorie de travaux, sans prix. Ex : "Fourniture et pose de plafond PVC". Elle reçoit un numéro A1, A2, A3... dans le document.
+2. ARTICLE (type="item") : un article/matériau avec unitaire et quantité. Ex : "6 paquets de lambris PVC" à 48000f l'unité.
+
+Exemple de structure lignes pour "Fourniture et pose de plafond PVC" avec ses articles :
+[
+  {"type": "section", "designation": "Fourniture et pose de plafond PVC"},
+  {"type": "item", "designation": "Paquets de lambris PVC", "unitaire": 48000, "qte": 6},
+  {"type": "item", "designation": "Languettes", "unitaire": 2500, "qte": 7},
+  {"type": "item", "designation": "Paquet de vis 4/25", "unitaire": 5000, "qte": 1},
+  {"type": "item", "designation": "Chevrons 6/4", "unitaire": 2500, "qte": 45},
+  {"type": "item", "designation": "Paquets de pointe n°8", "unitaire": 1000, "qte": 12},
+  {"type": "item", "designation": "Transport matériel", "unitaire": 20000, "qte": 1}
+]
+
 Règles :
 - Mets null pour les champs non mentionnés
-- Si l'utilisateur ne décrit pas un devis (question générale), "update" vaut null
+- Si pas de description de devis, "update" vaut null
 - Date du jour : ${today}
-- titre_travaux : nature des travaux en majuscules (ex : "FABRICATION ET POSE DE CUISINE ÉQUIPÉE")
-- Si le total est calculable depuis les lignes + main d'œuvre, génère automatiquement montant_lettres en toutes lettres en FCFA
+- titre_travaux en majuscules (ex : "FOURNITURE ET POSE DE PLAFOND PVC")
+- Identifie toujours les sections principales et regroupe les articles dedans
+- Si total calculable (somme des montants items + main d'œuvre), génère montant_lettres en toutes lettres FCFA
 - Les montants sont en Francs CFA (FCFA)
-- Dans "message" : confirme ce que tu as rempli, sois concis et professionnel`;
+- Dans "message" : confirme ce que tu as extrait, sois concis et professionnel`;
 
 export async function POST(req: NextRequest) {
   try {
