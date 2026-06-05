@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.4;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    margin: 0;
+  }
+  #doc-preview {
+    box-shadow: none !important;
+    padding: 20mm !important;
+    font-size: 11pt !important;
+  }
+  @page {
+    margin: 0;
+    size: A4;
+  }
+}

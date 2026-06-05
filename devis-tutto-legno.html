@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Générateur de Devis — TUTTO LEGNO</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --or: #B8892A;
+  --noir: #0f0f0f;
+  --bg: #1a1a1a;
+  --panel: #232323;
+  --border: #2e2e2e;
+  --text: #e8e8e8;
+  --muted: #888;
+  --input-bg: #2a2a2a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+  background: var(--noir);
+  border-bottom: 1px solid var(--or);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.topbar-logo svg { width: 38px; height: 34px; }
+.topbar-title { font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--or); text-transform: uppercase; }
+.topbar-sub { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+.btn-pdf {
+  background: var(--or);
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.btn-pdf:hover { opacity: .85; }
+
+/* ===== LAYOUT ===== */
+.app {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  min-height: calc(100vh - 65px);
+}
+
+/* ===== FORMULAIRE ===== */
+.form-panel {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 28px 24px;
+  overflow-y: auto;
+  max-height: calc(100vh - 65px);
+}
+.form-section { margin-bottom: 28px; }
+.form-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--or);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.form-row { margin-bottom: 12px; }
+.form-row label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 5px;
+  letter-spacing: .5px;
+}
+.form-row input, .form-row textarea, .form-row select {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color .2s;
+}
+.form-row input:focus, .form-row textarea:focus {
+  border-color: var(--or);
+}
+.form-row textarea { resize: vertical; min-height: 60px; }
+
+/* LIGNES */
+.lignes-header {
+  display: grid;
+  grid-template-columns: 2fr 80px 70px 80px 24px;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  letter-spacing: .5px;
+}
+.ligne-row {
+  display: grid;
+  grid-template-columns: 2fr 80px 70px 80px 24px;
+  gap: 6px;
+  margin-bottom: 6px;
+  align-items: center;
+}
+.ligne-row input {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  padding: 7px 8px;
+  outline: none;
+  width: 100%;
+}
+.ligne-row input:focus { border-color: var(--or); }
+.btn-del {
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: color .2s;
+  padding: 4px;
+}
+.btn-del:hover { color: #e24b4a; }
+.btn-add-ligne {
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  padding: 7px;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+  margin-top: 4px;
+}
+.btn-add-ligne:hover { border-color: var(--or); color: var(--or); }
+.totaux {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  padding: 12px;
+  margin-top: 14px;
+}
+.totaux-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 0;
+  color: var(--muted);
+}
+.totaux-row.main {
+  color: var(--or);
+  font-weight: 700;
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+  margin-top: 6px;
+  padding-top: 8px;
+}
+.mo-row { display: grid; grid-template-columns: 1fr 100px; gap: 8px; align-items: center; }
+
+/* ===== APERÇU ===== */
+.preview-panel {
+  background: #f0ede8;
+  overflow-y: auto;
+  max-height: calc(100vh - 65px);
+  display: flex;
+  justify-content: center;
+  padding: 32px;
+}
+.preview-scale {
+  width: 100%;
+  max-width: 740px;
+}
+
+/* ===== DOCUMENT (styles du devis) ===== */
+.doc {
+  background: #fff;
+  color: #111;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  padding: 40px;
+  box-shadow: 0 4px 40px rgba(0,0,0,.15);
+  min-height: 900px;
+}
+.doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.doc-logo-box {
+  width: 100px;
+  height: 85px;
+  border: 3px solid #b8892a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.doc-logo-box svg { width: 72px; height: 64px; }
+.doc-header-right { text-align: left; max-width: 360px; font-size: 11px; }
+.doc-company-name {
+  font-style: italic;
+  font-weight: bold;
+  font-size: 10.5px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.doc-client-box {
+  border: 1.5px solid #111;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+.doc-client-box .ref-title {
+  font-weight: bold;
+  font-size: 11px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #111;
+}
+.doc-table-title {
+  text-align: center;
+  font-weight: bold;
+  font-size: 12px;
+  border: 1.5px solid #111;
+  padding: 7px;
+  margin: 18px 0 0;
+  text-transform: uppercase;
+}
+.doc-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 0; }
+.doc-table th {
+  border: 1px solid #111;
+  padding: 6px 8px;
+  font-weight: bold;
+  text-align: center;
+  background: #fff;
+}
+.doc-table td {
+  border: 1px solid #111;
+  padding: 7px 8px;
+  vertical-align: middle;
+}
+.doc-table td.center { text-align: center; }
+.doc-table td.right { text-align: right; }
+.doc-table td.bold { font-weight: bold; }
+.doc-table .total-row td { font-weight: bold; padding: 7px 8px; }
+.doc-footer { margin-top: 28px; }
+.doc-montant { font-weight: bold; font-size: 13px; margin-bottom: 12px; }
+.doc-montant span { font-style: italic; font-weight: normal; }
+.doc-nb { font-style: italic; font-size: 11px; margin-bottom: 14px; line-height: 1.7; }
+.doc-conditions { font-style: italic; font-size: 11px; line-height: 1.8; }
+.doc-accord { margin-top: 24px; }
+.doc-accord-title { text-decoration: underline; font-weight: bold; font-size: 12px; margin-bottom: 20px; }
+.doc-contacts { text-align: center; font-weight: bold; font-size: 10.5px; margin-top: 32px; line-height: 1.6; color: #cc2200; }
+
+/* ===== PRINT ===== */
+@media print {
+  .topbar, .form-panel { display: none !important; }
+  body { background: #fff; }
+  .app { display: block; }
+  .preview-panel {
+    max-height: none;
+    overflow: visible;
+    background: #fff;
+    padding: 0;
+  }
+  .preview-scale { max-width: 100%; }
+  .doc { box-shadow: none; padding: 20mm; font-size: 11pt; }
+  @page { margin: 0; size: A4; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">
+      <svg viewBox="0 0 80 70" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="38" height="62" fill="none" stroke="#B8892A" stroke-width="5"/>
+        <rect x="20" y="28" width="50" height="38" fill="none" stroke="#B8892A" stroke-width="5"/>
+        <rect x="20" y="28" width="50" height="8" fill="#B8892A"/>
+        <rect x="2" y="2" width="38" height="7" fill="#B8892A"/>
+      </svg>
+    </div>
+    <div>
+      <div class="topbar-title">Tutto Legno</div>
+      <div class="topbar-sub">Générateur de Devis</div>
+    </div>
+  </div>
+  <button class="btn-pdf" onclick="window.print()">⬇ Télécharger PDF</button>
+</div>
+
+<!-- APP -->
+<div class="app">
+
+  <!-- FORMULAIRE -->
+  <div class="form-panel">
+
+    <div class="form-section">
+      <div class="form-section-title">Référence du devis</div>
+      <div class="form-row">
+        <label>Numéro de devis</label>
+        <input type="text" id="num_devis" placeholder="ex: 536HG/SC" oninput="render()">
+      </div>
+      <div class="form-row">
+        <label>Date</label>
+        <input type="date" id="date_devis" oninput="render()">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Client</div>
+      <div class="form-row">
+        <label>Raison sociale / Nom</label>
+        <input type="text" id="client_nom" placeholder="ex: Mr N'GUESSAN" oninput="render()">
+      </div>
+      <div class="form-row">
+        <label>Contact</label>
+        <input type="text" id="client_contact" placeholder="ex: 0505972493" oninput="render()">
+      </div>
+      <div class="form-row">
+        <label>Objet des travaux</label>
+        <input type="text" id="client_objet" placeholder="ex: Aménagement villa Bingerville" oninput="render()">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Nature des travaux</div>
+      <div class="form-row">
+        <label>Intitulé du tableau</label>
+        <input type="text" id="titre_travaux" placeholder="ex: FABRICATION ET POSE DE MEUBLE..." oninput="render()">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Lignes du devis</div>
+      <div class="lignes-header">
+        <span>Désignation</span>
+        <span>Unitaire</span>
+        <span>Qté</span>
+        <span>Montant</span>
+        <span></span>
+      </div>
+      <div id="lignes-container"></div>
+      <button class="btn-add-ligne" onclick="addLigne()">+ Ajouter une ligne</button>
+
+      <div class="totaux">
+        <div class="totaux-row">
+          <span>Total matériels</span>
+          <span id="tot-mat">0 FCFA</span>
+        </div>
+        <div class="form-row mo-row" style="margin-top:10px; margin-bottom:0">
+          <label style="margin:0; color:var(--muted); font-size:11px;">Main d'œuvre (FCFA)</label>
+          <input type="number" id="main_oeuvre" placeholder="0" oninput="render()" style="padding:6px 8px; font-size:11px;">
+        </div>
+        <div class="totaux-row main" style="margin-top:10px;">
+          <span>TOTAL</span>
+          <span id="tot-total">0 FCFA</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Montant en lettres</div>
+      <div class="form-row">
+        <label>Arrêté à la somme de</label>
+        <textarea id="montant_lettres" placeholder="ex: Six cent cinq mille Franc CFA" oninput="render()"></textarea>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Conditions</div>
+      <div class="form-row">
+        <label>% avance de démarrage</label>
+        <input type="number" id="avance_pct" value="80" oninput="render()">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- APERÇU -->
+  <div class="preview-panel">
+    <div class="preview-scale">
+      <div class="doc" id="doc-preview"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let lignes = [
+  { designation: '', unitaire: '', qte: '', montant: '' }
+];
+
+function addLigne() {
+  lignes.push({ designation: '', unitaire: '', qte: '', montant: '' });
+  renderForm();
+  render();
+}
+
+function removeLigne(i) {
+  if (lignes.length === 1) return;
+  lignes.splice(i, 1);
+  renderForm();
+  render();
+}
+
+function renderForm() {
+  const container = document.getElementById('lignes-container');
+  container.innerHTML = lignes.map((l, i) => `
+    <div class="ligne-row">
+      <input type="text" placeholder="Désignation" value="${esc(l.designation)}"
+        oninput="lignes[${i}].designation=this.value;render()">
+      <input type="number" placeholder="0" value="${l.unitaire}"
+        oninput="lignes[${i}].unitaire=this.value;calcMontant(${i})">
+      <input type="number" placeholder="1" value="${l.qte}"
+        oninput="lignes[${i}].qte=this.value;calcMontant(${i})">
+      <input type="number" placeholder="0" value="${l.montant}"
+        oninput="lignes[${i}].montant=this.value;render()">
+      <button class="btn-del" onclick="removeLigne(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function calcMontant(i) {
+  const u = parseFloat(lignes[i].unitaire) || 0;
+  const q = parseFloat(lignes[i].qte) || 0;
+  lignes[i].montant = u * q || '';
+  renderForm();
+  render();
+}
+
+function esc(s) {
+  return String(s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function fmt(n) {
+  const num = parseFloat(n) || 0;
+  if (num === 0) return '';
+  return num.toLocaleString('fr-FR');
+}
+
+function fmtFull(n) {
+  const num = parseFloat(n) || 0;
+  return num.toLocaleString('fr-FR') + ' FCFA';
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const [y, m, day] = d.split('-');
+  const mois = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  return `${parseInt(day)} ${mois[parseInt(m)-1]} ${y}`;
+}
+
+function render() {
+  // Calculs
+  const totalMat = lignes.reduce((acc, l) => acc + (parseFloat(l.montant) || 0), 0);
+  const mo = parseFloat(document.getElementById('main_oeuvre').value) || 0;
+  const total = totalMat + mo;
+
+  document.getElementById('tot-mat').textContent = fmtFull(totalMat);
+  document.getElementById('tot-total').textContent = fmtFull(total);
+
+  // Valeurs
+  const num = document.getElementById('num_devis').value || '___';
+  const dateRaw = document.getElementById('date_devis').value;
+  const dateStr = dateRaw ? formatDate(dateRaw) : '__ ______ ____';
+  const clientNom = document.getElementById('client_nom').value || '___';
+  const clientContact = document.getElementById('client_contact').value || '___';
+  const clientObjet = document.getElementById('client_objet').value || '___';
+  const titreTravaux = document.getElementById('titre_travaux').value || 'NATURE DES TRAVAUX';
+  const montantLettres = document.getElementById('montant_lettres').value || '___';
+  const avancePct = document.getElementById('avance_pct').value || '80';
+
+  // Lignes tableau
+  const lignesHTML = lignes.map((l, i) => {
+    const hasContent = l.designation || l.unitaire || l.qte || l.montant;
+    if (!hasContent && lignes.length > 1) return '';
+    return `
+      <tr>
+        <td class="center">${i === 0 ? 'A1' : 'A' + (i+1)}</td>
+        <td>${l.designation || ''}</td>
+        <td class="center">${fmt(l.unitaire)}</td>
+        <td class="center">${l.qte || ''}</td>
+        <td class="right">${fmt(l.montant)}</td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('doc-preview').innerHTML = `
+    <div class="doc-header">
+      <div class="doc-logo-box">
+        <svg viewBox="0 0 80 70" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="38" height="62" fill="none" stroke="#b8892a" stroke-width="5"/>
+          <rect x="20" y="28" width="50" height="38" fill="none" stroke="#b8892a" stroke-width="5"/>
+          <rect x="20" y="28" width="50" height="8" fill="#b8892a"/>
+          <rect x="2" y="2" width="38" height="7" fill="#b8892a"/>
+        </svg>
+      </div>
+      <div class="doc-header-right">
+        <div class="doc-company-name">
+          Menuiserie Industrielle et la Décoration<br>
+          Intérieur <strong>Facture Pro-Forma N°${num} TUTTO<br>
+          LEGNO/ ${dateRaw ? dateRaw.split('-').reverse().slice(1).join('/') + '/' + dateRaw.split('-')[0] : ''}</strong><br>
+          Abidjan, le ${dateStr}
+        </div>
+        <div class="doc-client-box">
+          <div class="ref-title">REFERENCE DU CLIENT</div>
+          <div><strong>RAISON SOCIAL:</strong> ${clientNom}</div>
+          <div><strong>CONTACT:</strong> ${clientContact}</div>
+          <div><strong>OBJET</strong> : ${clientObjet}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="doc-table-title">${titreTravaux}</div>
+    <table class="doc-table">
+      <thead>
+        <tr>
+          <th style="width:6%">N°</th>
+          <th style="width:44%">DESIGNATIONS</th>
+          <th style="width:14%">UNITAIRE</th>
+          <th style="width:14%">QUANTITE</th>
+          <th style="width:22%">MONTANT</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${lignesHTML}
+        <tr class="total-row">
+          <td colspan="4" style="text-align:right; font-weight:bold;">TOTAL MATERIELS</td>
+          <td class="right bold">${fmt(totalMat)}</td>
+        </tr>
+        <tr class="total-row">
+          <td colspan="4" style="text-align:right; font-weight:bold;">MAIN D'ŒUVRE</td>
+          <td class="right bold">${fmt(mo)}</td>
+        </tr>
+        <tr class="total-row">
+          <td colspan="4" style="text-align:right; font-weight:bold;">TOTAL</td>
+          <td class="right bold">${fmt(total)}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="doc-footer">
+      <div class="doc-montant">
+        Arrêté le Présent Devis à la somme de : ${montantLettres} <span>Franc CFA</span>
+      </div>
+      <div class="doc-nb">
+        <strong>NB</strong> : Le Devis est de nature indicative, peut être réviser à la baisse ou à la hausse,
+        suivant d'éventuel modification par réduction quantitative et le coût de matière d'œuvre qui peuvent
+        survenir sur le marché au cours de la commande avant ou après 3 mois de validation de celui-ci
+        au démarrage des travaux.
+      </div>
+      <div class="doc-conditions">
+        <strong>CONDITIONS PARTICULIERES</strong> : Une avance de démarrage de <strong>${avancePct}%</strong>
+        du marché conclu est exigée à la commande.<br>
+        La suite du paiement par situation selon le volume de livraison et le solde à la fin de la dernière livraison.
+      </div>
+      <div class="doc-accord">
+        <div class="doc-accord-title">BON POUR ACCORD &nbsp;&nbsp;&nbsp; LA COMPTABILITE</div>
+      </div>
+      <div class="doc-contacts">
+        TUTTO LEGNO MENUISERIE INDUSTRIELLE SARL COCODY CITE DES ARTS /CONTACT : 07 07 55 35 45 – 05 04 53 59 53 /16 BP 336 Abj 16
+      </div>
+    </div>
+  `;
+}
+
+// Init
+document.getElementById('date_devis').valueAsDate = new Date();
+renderForm();
+render();
+</script>
+</body>
+</html>
