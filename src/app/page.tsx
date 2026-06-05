@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import TopBar from "@/components/TopBar";
 import FormPanel from "@/components/FormPanel";
 import ChatPanel from "@/components/ChatPanel";
@@ -58,92 +59,90 @@ export default function Home() {
   const [devis, setDevis] = useState<DevisData>(initialDevis);
   const [sideTab, setSideTab] = useState<SideTab>("chat");
   const [mobileTab, setMobileTab] = useState<MobileTab>("chat");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const handleUpdate = (update: DevisUpdate) => {
     setDevis((current) => applyUpdate(current, update));
   };
 
-  const mobileTabDef: { key: MobileTab; label: string }[] = [
-    { key: "chat", label: "✦ Chat" },
+  const mobileTabs: { key: MobileTab; label: string }[] = [
+    { key: "chat", label: "✦ Chat IA" },
     { key: "form", label: "⊞ Formulaire" },
     { key: "preview", label: "◻ Aperçu" },
   ];
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-app-bg">
-      <TopBar onPrint={() => window.print()} />
+    <>
+      <div className="flex flex-col h-screen overflow-hidden bg-app-bg">
+        <TopBar onPrint={() => window.print()} />
 
-      {/* ── MOBILE layout (< md) ───────────────────────── */}
-      <div className="flex flex-col flex-1 overflow-hidden md:hidden no-print">
-        {/* Tab bar */}
-        <div className="flex border-b border-app-border bg-app-panel flex-shrink-0">
-          {mobileTabDef.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setMobileTab(key)}
-              className={`flex-1 py-2.5 text-[10px] font-bold tracking-[1px] uppercase transition-colors border-none cursor-pointer ${
-                mobileTab === key
-                  ? "text-gold border-b-2 border-gold bg-app-bg"
-                  : "text-app-muted bg-transparent"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {mobileTab === "chat" && (
-            <ChatPanel devis={devis} onUpdate={handleUpdate} />
-          )}
-          {mobileTab === "form" && (
-            <FormPanel devis={devis} onChange={setDevis} />
-          )}
-          {mobileTab === "preview" && (
-            <PreviewWrapper devis={devis} />
-          )}
-        </div>
-      </div>
-
-      {/* ── DESKTOP layout (≥ md) ──────────────────────── */}
-      <div className="hidden md:flex flex-1 overflow-hidden">
-        {/* Left panel */}
-        <div className="no-print w-[300px] lg:w-[380px] flex-shrink-0 bg-app-panel border-r border-app-border flex flex-col overflow-hidden">
-          {/* Tabs */}
-          <div className="flex border-b border-app-border flex-shrink-0">
-            {(["chat", "form"] as SideTab[]).map((tab) => (
+        {/* ── MOBILE (< md) ───────────────────── */}
+        <div className="flex flex-col flex-1 overflow-hidden md:hidden">
+          {/* Tab bar */}
+          <div className="flex border-b border-app-border bg-app-panel flex-shrink-0">
+            {mobileTabs.map(({ key, label }) => (
               <button
-                key={tab}
-                onClick={() => setSideTab(tab)}
-                className={`flex-1 py-3 text-[11px] font-bold tracking-[1.5px] uppercase transition-colors border-none cursor-pointer ${
-                  sideTab === tab
+                key={key}
+                onClick={() => setMobileTab(key)}
+                className={`flex-1 py-3 text-[10px] font-bold tracking-[1px] uppercase transition-colors border-none cursor-pointer ${
+                  mobileTab === key
                     ? "text-gold border-b-2 border-gold bg-app-bg"
-                    : "text-app-muted hover:text-app-text bg-transparent"
+                    : "text-app-muted bg-transparent"
                 }`}
               >
-                {tab === "chat" ? "✦ Chat IA" : "⊞ Formulaire"}
+                {label}
               </button>
             ))}
           </div>
-
-          {sideTab === "chat" ? (
-            <ChatPanel devis={devis} onUpdate={handleUpdate} />
-          ) : (
-            <FormPanel devis={devis} onChange={setDevis} />
-          )}
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {mobileTab === "chat" && <ChatPanel devis={devis} onUpdate={handleUpdate} />}
+            {mobileTab === "form" && <FormPanel devis={devis} onChange={setDevis} />}
+            {mobileTab === "preview" && <PreviewWrapper devis={devis} />}
+          </div>
         </div>
 
-        {/* Preview — always visible on desktop */}
-        <div className="flex-1 overflow-hidden">
-          <PreviewWrapper devis={devis} />
+        {/* ── DESKTOP (≥ md) ──────────────────── */}
+        <div className="hidden md:flex flex-1 overflow-hidden">
+          {/* Panneau gauche */}
+          <div className="w-[300px] lg:w-[380px] flex-shrink-0 bg-app-panel border-r border-app-border flex flex-col overflow-hidden">
+            <div className="flex border-b border-app-border flex-shrink-0">
+              {(["chat", "form"] as SideTab[]).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setSideTab(tab)}
+                  className={`flex-1 py-3 text-[11px] font-bold tracking-[1.5px] uppercase transition-colors border-none cursor-pointer ${
+                    sideTab === tab
+                      ? "text-gold border-b-2 border-gold bg-app-bg"
+                      : "text-app-muted hover:text-app-text bg-transparent"
+                  }`}
+                >
+                  {tab === "chat" ? "✦ Chat IA" : "⊞ Formulaire"}
+                </button>
+              ))}
+            </div>
+            {sideTab === "chat" ? (
+              <ChatPanel devis={devis} onUpdate={handleUpdate} />
+            ) : (
+              <FormPanel devis={devis} onChange={setDevis} />
+            )}
+          </div>
+
+          {/* Aperçu */}
+          <div className="flex-1 overflow-hidden">
+            <PreviewWrapper devis={devis} />
+          </div>
         </div>
       </div>
 
-      {/* Conteneur dédié à l'impression — hors de tout overflow/zoom */}
-      <div id="print-wrapper">
-        <DevisDoc devis={devis} docId="doc-print" />
-      </div>
-    </div>
+      {/* Portail d'impression — rendu directement dans <body>, hors de tout layout */}
+      {mounted && createPortal(
+        <div id="print-wrapper">
+          <DevisDoc devis={devis} docId="doc-print" />
+        </div>,
+        document.body
+      )}
+    </>
   );
 }

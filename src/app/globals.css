@@ -3,43 +3,26 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    box-sizing: border-box;
-  }
-
+  * { box-sizing: border-box; }
   input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    opacity: 0.4;
-  }
+  input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; }
 }
 
-/* Conteneur print caché en mode normal */
+/* Portail d'impression — caché en mode normal */
 #print-wrapper {
   display: none;
 }
 
 @media print {
-  /* Cacher tout le contenu de la page */
-  body {
-    visibility: hidden;
-    margin: 0;
-    padding: 0;
-    background: white;
+  /* Cacher tous les enfants directs de body sauf le portail */
+  body > *:not(#print-wrapper) {
+    display: none !important;
   }
 
-  /* Afficher uniquement le conteneur d'impression */
+  /* Afficher le document */
   #print-wrapper {
     display: block !important;
-    visibility: visible;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
     background: white;
-  }
-
-  #print-wrapper * {
-    visibility: visible;
   }
 
   #doc-print {
