@@ -2,6 +2,7 @@ import { DevisData } from "@/lib/types";
 
 interface DevisDocProps {
   devis: DevisData;
+  docId?: string;
 }
 
 function fmt(n: number | string | ""): string {
@@ -21,7 +22,7 @@ function formatDate(d: string): string {
   return `${parseInt(day)} ${mois[parseInt(m) - 1]} ${y}`;
 }
 
-export default function DevisDoc({ devis }: DevisDocProps) {
+export default function DevisDoc({ devis, docId = "doc-preview" }: DevisDocProps) {
   const totalMat = devis.lignes.reduce(
     (acc, l) => acc + (parseFloat(String(l.montant)) || 0),
     0
@@ -44,7 +45,7 @@ export default function DevisDoc({ devis }: DevisDocProps) {
 
   return (
     <div
-      id="doc-preview"
+      id={docId}
       style={{
         background: "#fff",
         color: "#111",

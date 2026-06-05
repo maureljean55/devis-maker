@@ -13,19 +13,42 @@
   }
 }
 
+/* Conteneur print caché en mode normal */
+#print-wrapper {
+  display: none;
+}
+
 @media print {
-  .no-print {
-    display: none !important;
-  }
+  /* Cacher tout le contenu de la page */
   body {
-    background: #fff !important;
+    visibility: hidden;
     margin: 0;
+    padding: 0;
+    background: white;
   }
-  #doc-preview {
+
+  /* Afficher uniquement le conteneur d'impression */
+  #print-wrapper {
+    display: block !important;
+    visibility: visible;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: white;
+  }
+
+  #print-wrapper * {
+    visibility: visible;
+  }
+
+  #doc-print {
     box-shadow: none !important;
-    padding: 20mm !important;
+    padding: 15mm !important;
     font-size: 11pt !important;
+    min-height: unset !important;
   }
+
   @page {
     margin: 0;
     size: A4;

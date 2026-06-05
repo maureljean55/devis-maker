@@ -5,6 +5,7 @@ import TopBar from "@/components/TopBar";
 import FormPanel from "@/components/FormPanel";
 import ChatPanel from "@/components/ChatPanel";
 import PreviewWrapper from "@/components/PreviewWrapper";
+import DevisDoc from "@/components/DevisDoc";
 import { DevisData, DevisUpdate } from "@/lib/types";
 
 function genId() {
@@ -137,6 +138,11 @@ export default function Home() {
         <div className="flex-1 overflow-hidden">
           <PreviewWrapper devis={devis} />
         </div>
+      </div>
+
+      {/* Conteneur dédié à l'impression — hors de tout overflow/zoom */}
+      <div id="print-wrapper">
+        <DevisDoc devis={devis} docId="doc-print" />
       </div>
     </div>
   );
