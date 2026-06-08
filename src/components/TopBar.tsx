@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 interface TopBarProps {
   onPrint: () => void;
 }
@@ -23,14 +25,23 @@ export default function TopBar({ onPrint }: TopBarProps) {
           </div>
         </div>
       </div>
-      <button
-        onClick={onPrint}
-        className="bg-gold text-white px-3 md:px-6 py-2 md:py-2.5 text-[11px] md:text-[12px] font-bold tracking-[1px] md:tracking-[1.5px] uppercase cursor-pointer hover:opacity-85 transition-opacity border-none"
-      >
-        <span className="hidden sm:inline">⬇ Télécharger </span>
-        <span className="sm:hidden">⬇ </span>
-        PDF
-      </button>
+      <div className="flex items-center gap-2 md:gap-3">
+        <Link
+          href="/prospection"
+          className="px-3 md:px-5 py-2 md:py-2.5 text-[11px] md:text-[12px] font-bold tracking-[1px] md:tracking-[1.5px] uppercase border border-gold text-gold hover:bg-gold hover:text-black transition-all no-underline"
+        >
+          <span className="hidden sm:inline">⬢ Prospection</span>
+          <span className="sm:hidden">⬢</span>
+        </Link>
+        <button
+          onClick={onPrint}
+          className="bg-gold text-white px-3 md:px-6 py-2 md:py-2.5 text-[11px] md:text-[12px] font-bold tracking-[1px] md:tracking-[1.5px] uppercase cursor-pointer hover:opacity-85 transition-opacity border-none"
+        >
+          <span className="hidden sm:inline">⬇ Télécharger </span>
+          <span className="sm:hidden">⬇ </span>
+          PDF
+        </button>
+      </div>
     </header>
   );
 }

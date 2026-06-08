@@ -4,3 +4,11 @@ node_modules/
 .next/
 out/
 .DS_Store
+tsconfig.tsbuildinfo
+
+# Agent prospection
+tutto_legno_agent/.env
+tutto_legno_agent/__pycache__/
+tutto_legno_agent/venv/
+tutto_legno_agent/output/prospects.db
+tutto_legno_agent/output/prospects.csv
