@@ -82,9 +82,10 @@ export default function ProspectionPage() {
       body: JSON.stringify({ mode }),
     });
     const data = await res.json();
+    // Affiche le log (succès) ou l'erreur avec couleur différente côté UI
     setScrapeLog(data.log || data.error || "Terminé.");
     setScraping(false);
-    fetchProspects();
+    if (data.ok) fetchProspects();
   };
 
   /* ── Génération message ─────────────────────────────────────────────────── */
@@ -197,7 +198,7 @@ export default function ProspectionPage() {
             disabled={scraping}
             className="px-4 py-2 text-[11px] font-bold tracking-[1px] uppercase border border-[#B8892A] text-[#B8892A] hover:bg-[#B8892A] hover:text-black transition-all disabled:opacity-40 cursor-pointer"
           >
-            {scraping ? "⏳ En cours..." : "▷ Démo (6 prospects)"}
+            {scraping ? "⏳ En cours..." : "▷ Démo (10 prospects)"}
           </button>
           {/* Bouton scraping réel */}
           <button
@@ -223,7 +224,11 @@ export default function ProspectionPage() {
           >
             ✕
           </button>
-          <pre className="text-[10px] text-[#4ade80] font-mono whitespace-pre-wrap max-h-32 overflow-y-auto flex-1">
+          <pre className={`text-[10px] font-mono whitespace-pre-wrap max-h-32 overflow-y-auto flex-1 ${
+            scrapeLog.includes("nécessite un environnement local") || scrapeLog.includes("command not found")
+              ? "text-amber-400"
+              : "text-[#4ade80]"
+          }`}>
             {scrapeLog}
           </pre>
         </div>
