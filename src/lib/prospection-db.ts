@@ -16,12 +16,11 @@ export interface Prospect {
   date_contact: string | null;
 }
 
-const DB_PATH = path.join(
-  process.cwd(),
-  "tutto_legno_agent",
-  "output",
-  "prospects.db"
-);
+// Sur Vercel le filesystem est read-only — seul /tmp est accessible en écriture.
+// En local on garde le chemin dans le projet pour la persistance.
+const DB_PATH = process.env.VERCEL
+  ? "/tmp/prospects.db"
+  : path.join(process.cwd(), "tutto_legno_agent", "output", "prospects.db");
 
 function openDb() {
   const dir = path.dirname(DB_PATH);
