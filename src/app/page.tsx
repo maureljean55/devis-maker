@@ -75,10 +75,24 @@ export default function Home() {
     setDevis((current) => applyUpdate(current, update));
   };
 
+  const handlePrint = async () => {
+    // Sauvegarder le devis dans Supabase avant impression
+    try {
+      await fetch("/api/devis-imprimes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(devis),
+      });
+    } catch {
+      // L'impression continue même si la sauvegarde échoue
+    }
+    window.print();
+  };
+
   return (
     <>
       <div className="flex flex-col overflow-hidden bg-app-bg" style={{ height: "100dvh" }}>
-        <TopBar onPrint={() => window.print()} />
+        <TopBar onPrint={handlePrint} />
 
         {/* ── MOBILE (< md) ───────────────────── */}
         <div className="flex flex-col flex-1 overflow-hidden md:hidden">
@@ -92,7 +106,7 @@ export default function Home() {
           {/* Bouton PDF flottant — visible uniquement sur l'onglet Aperçu */}
           {mobileTab === "preview" && (
             <button
-              onClick={() => window.print()}
+              onClick={handlePrint}
               className="fixed right-4 z-40 bg-gold text-white font-bold tracking-[1.5px] uppercase shadow-lg cursor-pointer border-none px-5 py-3 text-[12px] hover:opacity-90 transition-opacity"
               style={{ bottom: "calc(60px + env(safe-area-inset-bottom) + 12px)" }}
             >
