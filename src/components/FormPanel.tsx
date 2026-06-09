@@ -67,15 +67,17 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
   const fmtFull = (n: number) => n.toLocaleString("fr-FR") + " FCFA";
 
   const inp =
-    "w-full bg-app-input border border-app-border text-app-text font-montserrat text-[12px] px-3 py-2 outline-none focus:border-gold transition-colors";
+    "w-full bg-app-input border border-app-border text-app-text font-montserrat px-3 py-2.5 outline-none focus:border-gold transition-colors text-[12px] sm:text-[12px]";
   const lbl = "block text-[11px] text-app-muted mb-1.5 tracking-[0.5px]";
   const sec =
     "text-[10px] font-bold tracking-[2px] text-gold uppercase mb-3.5 pb-2 border-b border-app-border";
+  const numInp =
+    "w-full bg-app-input border border-app-border text-app-text font-montserrat px-2 py-2.5 outline-none focus:border-gold transition-colors text-[12px] sm:text-[11px]";
 
   return (
-    <div className="overflow-y-auto flex-1 px-6 py-7">
+    <div className="overflow-y-auto flex-1 px-4 sm:px-6 py-5 sm:py-7">
       {/* Référence */}
-      <div className="mb-7">
+      <div className="mb-6">
         <div className={sec}>Référence du devis</div>
         <div className="mb-3">
           <label className={lbl}>Numéro de devis</label>
@@ -90,7 +92,7 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
       </div>
 
       {/* Client */}
-      <div className="mb-7">
+      <div className="mb-6">
         <div className={sec}>Client</div>
         <div className="mb-3">
           <label className={lbl}>Raison sociale / Nom</label>
@@ -99,7 +101,7 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
         </div>
         <div className="mb-3">
           <label className={lbl}>Contact</label>
-          <input type="text" className={inp} placeholder="ex: 0505972493"
+          <input type="tel" inputMode="tel" className={inp} placeholder="ex: 0505972493"
             value={devis.client_contact} onChange={(e) => update("client_contact", e.target.value)} />
         </div>
         <div className="mb-3">
@@ -110,7 +112,7 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
       </div>
 
       {/* Nature des travaux */}
-      <div className="mb-7">
+      <div className="mb-6">
         <div className={sec}>Nature des travaux</div>
         <div className="mb-3">
           <label className={lbl}>Intitulé du tableau</label>
@@ -120,8 +122,13 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
       </div>
 
       {/* Lignes */}
-      <div className="mb-7">
+      <div className="mb-6">
         <div className={sec}>Lignes du devis</div>
+
+        {/* Colonnes header — desktop only */}
+        <div className="hidden sm:grid sm:grid-cols-[2fr_75px_55px_75px_24px] gap-1 text-[9px] text-app-muted mb-1.5 pl-7 tracking-[0.5px]">
+          <span>Désignation</span><span>Unitaire</span><span>Qté</span><span>Montant</span><span />
+        </div>
 
         {(() => {
           let secCount = 0;
@@ -130,20 +137,20 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
               secCount++;
               const label = `A${secCount}`;
               return (
-                <div key={l.id} className="flex gap-1.5 mb-2 items-center">
+                <div key={l.id} className="flex gap-2 mb-2 items-center">
                   <span className="text-[10px] font-bold text-gold w-6 flex-shrink-0 text-center">
                     {label}
                   </span>
                   <input
                     type="text"
                     placeholder="Titre de la section..."
-                    className="flex-1 bg-app-bg border border-gold/40 text-gold font-montserrat text-[11px] font-bold italic px-2 py-1.5 outline-none focus:border-gold transition-colors"
+                    className="flex-1 bg-app-bg border border-gold/40 text-gold font-montserrat text-[13px] sm:text-[11px] font-bold italic px-2 py-2.5 outline-none focus:border-gold transition-colors"
                     value={l.designation}
                     onChange={(e) => updateLigne(i, "designation", e.target.value)}
                   />
                   <button
                     onClick={() => removeLigne(i)}
-                    className="text-app-muted hover:text-red-500 text-lg leading-none transition-colors bg-transparent border-none cursor-pointer p-1 flex-shrink-0"
+                    className="text-app-muted hover:text-red-500 text-xl leading-none transition-colors bg-transparent border-none cursor-pointer p-2 flex-shrink-0"
                   >
                     ×
                   </button>
@@ -151,46 +158,95 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
               );
             }
 
-            // item
+            // item — flex-wrap: designation full row, then numbers in a row
             return (
-              <div
-                key={l.id}
-                className="grid grid-cols-[2fr_75px_55px_75px_24px] gap-1 mb-1 items-center pl-5"
-              >
-                <input type="text" placeholder="Désignation"
-                  className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
-                  value={l.designation} onChange={(e) => updateLigne(i, "designation", e.target.value)} />
-                <input type="number" placeholder="0"
-                  className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
-                  value={l.unitaire} onChange={(e) => updateLigne(i, "unitaire", e.target.value)} />
-                <input type="number" placeholder="1"
-                  className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
-                  value={l.qte} onChange={(e) => updateLigne(i, "qte", e.target.value)} />
-                <input type="number" placeholder="0"
-                  className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
-                  value={l.montant} onChange={(e) => updateLigne(i, "montant", e.target.value)} />
-                <button onClick={() => removeLigne(i)}
-                  className="text-app-muted hover:text-red-500 text-lg leading-none transition-colors bg-transparent border-none cursor-pointer p-1">
-                  ×
-                </button>
+              <div key={l.id} className="mb-3 sm:mb-1 pl-7">
+                {/* Mobile layout: stacked */}
+                <div className="sm:hidden">
+                  <div className="flex gap-1 mb-1 items-center">
+                    <input
+                      type="text"
+                      placeholder="Désignation"
+                      className="flex-1 bg-app-input border border-app-border text-app-text font-montserrat px-2 py-2.5 outline-none focus:border-gold transition-colors text-[13px]"
+                      value={l.designation}
+                      onChange={(e) => updateLigne(i, "designation", e.target.value)}
+                    />
+                    <button
+                      onClick={() => removeLigne(i)}
+                      className="text-app-muted hover:text-red-500 text-xl leading-none transition-colors bg-transparent border-none cursor-pointer p-2 flex-shrink-0"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    <div>
+                      <div className="text-[9px] text-app-muted mb-0.5 tracking-[0.5px]">P. Unitaire</div>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        placeholder="0"
+                        className={numInp}
+                        value={l.unitaire}
+                        onChange={(e) => updateLigne(i, "unitaire", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <div className="text-[9px] text-app-muted mb-0.5 tracking-[0.5px]">Quantité</div>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        placeholder="1"
+                        className={numInp}
+                        value={l.qte}
+                        onChange={(e) => updateLigne(i, "qte", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <div className="text-[9px] text-app-muted mb-0.5 tracking-[0.5px]">Montant</div>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        placeholder="0"
+                        className={numInp}
+                        value={l.montant}
+                        onChange={(e) => updateLigne(i, "montant", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop layout: single-row grid */}
+                <div className="hidden sm:grid sm:grid-cols-[2fr_75px_55px_75px_24px] gap-1 items-center">
+                  <input type="text" placeholder="Désignation"
+                    className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
+                    value={l.designation} onChange={(e) => updateLigne(i, "designation", e.target.value)} />
+                  <input type="number" placeholder="0"
+                    className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
+                    value={l.unitaire} onChange={(e) => updateLigne(i, "unitaire", e.target.value)} />
+                  <input type="number" placeholder="1"
+                    className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
+                    value={l.qte} onChange={(e) => updateLigne(i, "qte", e.target.value)} />
+                  <input type="number" placeholder="0"
+                    className="bg-app-input border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
+                    value={l.montant} onChange={(e) => updateLigne(i, "montant", e.target.value)} />
+                  <button onClick={() => removeLigne(i)}
+                    className="text-app-muted hover:text-red-500 text-lg leading-none transition-colors bg-transparent border-none cursor-pointer p-1">
+                    ×
+                  </button>
+                </div>
               </div>
             );
           });
         })()}
 
-        {/* Colonnes header pour items */}
-        <div className="grid grid-cols-[2fr_75px_55px_75px_24px] gap-1 text-[9px] text-app-muted mt-1 mb-2 pl-5 tracking-[0.5px]">
-          <span>Désignation</span><span>Unitaire</span><span>Qté</span><span>Montant</span><span />
-        </div>
-
         {/* Boutons ajout */}
-        <div className="flex gap-2 mt-2">
+        <div className="flex gap-2 mt-3">
           <button onClick={addSection}
-            className="flex-1 border border-dashed border-gold/50 text-gold font-montserrat text-[10px] font-bold py-2 cursor-pointer hover:border-gold transition-colors bg-transparent uppercase tracking-wider">
+            className="flex-1 border border-dashed border-gold/50 text-gold font-montserrat text-[11px] font-bold py-3 cursor-pointer hover:border-gold transition-colors bg-transparent uppercase tracking-wider">
             + Section
           </button>
           <button onClick={addItem}
-            className="flex-1 border border-dashed border-app-border text-app-muted font-montserrat text-[10px] py-2 cursor-pointer hover:border-gold hover:text-gold transition-colors bg-transparent">
+            className="flex-1 border border-dashed border-app-border text-app-muted font-montserrat text-[11px] py-3 cursor-pointer hover:border-gold hover:text-gold transition-colors bg-transparent">
             + Article
           </button>
         </div>
@@ -201,14 +257,14 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
             <span>Total matériels</span>
             <span>{fmtFull(totalMat)}</span>
           </div>
-          <div className="grid grid-cols-[1fr_110px] gap-2 items-center mt-2.5">
-            <label className="text-app-muted text-[11px]">Main d&apos;œuvre (FCFA)</label>
-            <input type="number" placeholder="0"
-              className="bg-app-bg border border-app-border text-app-text font-montserrat text-[11px] px-2 py-1.5 outline-none focus:border-gold transition-colors w-full"
+          <div className="flex flex-col sm:grid sm:grid-cols-[1fr_110px] gap-2 mt-2.5">
+            <label className="text-app-muted text-[12px] sm:text-[11px]">Main d&apos;œuvre (FCFA)</label>
+            <input type="number" inputMode="decimal" placeholder="0"
+              className="bg-app-bg border border-app-border text-app-text font-montserrat px-2 py-2.5 sm:py-1.5 outline-none focus:border-gold transition-colors w-full text-[12px] sm:text-[11px]"
               value={devis.main_oeuvre}
               onChange={(e) => update("main_oeuvre", e.target.value === "" ? "" : parseFloat(e.target.value))} />
           </div>
-          <div className="flex justify-between text-gold font-bold text-[13px] border-t border-app-border mt-2 pt-2">
+          <div className="flex justify-between text-gold font-bold text-[14px] sm:text-[13px] border-t border-app-border mt-2 pt-2">
             <span>TOTAL</span>
             <span>{fmtFull(total)}</span>
           </div>
@@ -216,11 +272,11 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
       </div>
 
       {/* Montant en lettres */}
-      <div className="mb-7">
+      <div className="mb-6">
         <div className={sec}>Montant en lettres</div>
         <div className="mb-3">
           <label className={lbl}>Arrêté à la somme de</label>
-          <textarea className={`${inp} resize-y min-h-[60px]`}
+          <textarea className={`${inp} resize-y min-h-[64px]`}
             placeholder="ex: Six cent cinq mille Franc CFA"
             value={devis.montant_lettres}
             onChange={(e) => update("montant_lettres", e.target.value)} />
@@ -228,11 +284,11 @@ export default function FormPanel({ devis, onChange }: FormPanelProps) {
       </div>
 
       {/* Conditions */}
-      <div className="mb-7">
+      <div className="mb-6">
         <div className={sec}>Conditions</div>
         <div className="mb-3">
           <label className={lbl}>% avance de démarrage</label>
-          <input type="number" className={inp}
+          <input type="number" inputMode="decimal" className={inp}
             value={devis.avance_pct}
             onChange={(e) => update("avance_pct", parseFloat(e.target.value) || 80)} />
         </div>

@@ -9,19 +9,14 @@ const DOC_WIDTH = 740;
 export default function PreviewWrapper({ devis }: { devis: DevisData }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const update = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-
-      if (!mobile && containerRef.current) {
-        const available = containerRef.current.offsetWidth - 64;
-        setZoom(Math.min(1, available / DOC_WIDTH));
-      } else {
-        setZoom(1);
-      }
+      if (!containerRef.current) return;
+      const isMobile = window.innerWidth < 768;
+      const padding = isMobile ? 16 : 64;
+      const available = containerRef.current.offsetWidth - padding;
+      setZoom(Math.min(1, available / DOC_WIDTH));
     };
 
     update();
@@ -33,14 +28,12 @@ export default function PreviewWrapper({ devis }: { devis: DevisData }) {
   return (
     <div
       ref={containerRef}
-      className="overflow-y-auto overflow-x-auto h-full"
-      style={{ background: "#f0ede8", padding: isMobile ? "12px" : "32px" }}
+      className="overflow-y-auto h-full"
+      style={{ background: "#f0ede8", padding: "12px" }}
     >
       <div
         style={{
           zoom,
-          // Sur mobile : largeur fixe (doc scrollable horizontalement)
-          // Sur desktop : zoom pour s'adapter au conteneur
           width: `${DOC_WIDTH}px`,
           margin: "0 auto",
         }}

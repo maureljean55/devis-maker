@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { ChatMessage, ChatResponse, DevisData, DevisUpdate } from "@/lib/types";
 
 interface ChatPanelProps {
@@ -19,10 +19,23 @@ export default function ChatPanel({ devis, onUpdate }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  // Auto-grow textarea
+  const autoGrow = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
+  }, []);
+
+  useEffect(() => {
+    autoGrow();
+  }, [input, autoGrow]);
 
   const send = async () => {
     const text = input.trim();
@@ -33,6 +46,11 @@ export default function ChatPanel({ devis, onUpdate }: ChatPanelProps) {
     setMessages(newMessages);
     setInput("");
     setLoading(true);
+
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
 
     try {
       const res = await fetch("/api/chat", {
@@ -71,14 +89,14 @@ export default function ChatPanel({ devis, onUpdate }: ChatPanelProps) {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 space-y-3">
         {messages.map((m, i) => (
           <div
             key={i}
             className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[88%] px-3.5 py-2.5 text-[12px] leading-relaxed whitespace-pre-wrap ${
+              className={`max-w-[90%] sm:max-w-[88%] px-4 py-3 text-[14px] sm:text-[12px] leading-relaxed whitespace-pre-wrap ${
                 m.role === "user"
                   ? "bg-gold text-white"
                   : "bg-app-input border border-app-border text-app-text"
@@ -96,12 +114,12 @@ export default function ChatPanel({ devis, onUpdate }: ChatPanelProps) {
 
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-app-input border border-app-border px-3.5 py-3">
-              <div className="flex gap-1 items-center">
+            <div className="bg-app-input border border-app-border px-4 py-3">
+              <div className="flex gap-1.5 items-center">
                 {[0, 150, 300].map((delay) => (
                   <span
                     key={delay}
-                    className="w-1.5 h-1.5 bg-gold rounded-full animate-bounce"
+                    className="w-2 h-2 bg-gold rounded-full animate-bounce"
                     style={{ animationDelay: `${delay}ms` }}
                   />
                 ))}
@@ -113,13 +131,15 @@ export default function ChatPanel({ devis, onUpdate }: ChatPanelProps) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="p-3 border-t border-app-border flex-shrink-0">
-        <div className="flex gap-2">
+      {/* Input area */}
+      <div className="px-3 sm:px-3 py-3 border-t border-app-border flex-shrink-0">
+        <div className="flex gap-2 items-end">
           <textarea
-            className="flex-1 bg-app-input border border-app-border text-app-text font-montserrat text-[12px] px-3 py-2 outline-none focus:border-gold transition-colors resize-none"
-            rows={3}
-            placeholder="Décrivez votre devis... (Entrée pour envoyer)"
+            ref={textareaRef}
+            className="flex-1 bg-app-input border border-app-border text-app-text font-montserrat text-[14px] sm:text-[12px] px-3 py-2.5 outline-none focus:border-gold transition-colors resize-none overflow-hidden leading-relaxed"
+            rows={1}
+            style={{ minHeight: "44px" }}
+            placeholder="Décrivez votre devis..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKey}
@@ -127,12 +147,14 @@ export default function ChatPanel({ devis, onUpdate }: ChatPanelProps) {
           <button
             onClick={send}
             disabled={loading || !input.trim()}
-            className="bg-gold text-white px-4 text-[11px] font-bold tracking-wider uppercase cursor-pointer disabled:opacity-40 hover:opacity-85 transition-opacity self-end py-2.5 border-none flex-shrink-0"
+            className="bg-gold text-white flex-shrink-0 flex items-center justify-center cursor-pointer disabled:opacity-40 hover:opacity-85 transition-opacity border-none"
+            style={{ width: "44px", height: "44px", fontSize: "18px" }}
+            aria-label="Envoyer"
           >
-            Envoyer
+            ➤
           </button>
         </div>
-        <div className="text-[10px] text-app-muted mt-1.5">
+        <div className="hidden sm:block text-[10px] text-app-muted mt-1.5">
           Entrée pour envoyer · Maj+Entrée pour nouvelle ligne
         </div>
       </div>

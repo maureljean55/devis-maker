@@ -55,6 +55,12 @@ function applyUpdate(current: DevisData, update: DevisUpdate): DevisData {
 type SideTab = "chat" | "form";
 type MobileTab = "chat" | "form" | "preview";
 
+const mobileTabs: { key: MobileTab; icon: string; label: string }[] = [
+  { key: "chat",    icon: "✦", label: "Chat IA"   },
+  { key: "form",    icon: "✎", label: "Formulaire" },
+  { key: "preview", icon: "◻", label: "Aperçu"    },
+];
+
 export default function Home() {
   const [devis, setDevis] = useState<DevisData>(initialDevis);
   const [sideTab, setSideTab] = useState<SideTab>("chat");
@@ -67,12 +73,6 @@ export default function Home() {
     setDevis((current) => applyUpdate(current, update));
   };
 
-  const mobileTabs: { key: MobileTab; label: string }[] = [
-    { key: "chat", label: "✦ Chat IA" },
-    { key: "form", label: "⊞ Formulaire" },
-    { key: "preview", label: "◻ Aperçu" },
-  ];
-
   return (
     <>
       <div className="flex flex-col h-screen overflow-hidden bg-app-bg">
@@ -80,26 +80,39 @@ export default function Home() {
 
         {/* ── MOBILE (< md) ───────────────────── */}
         <div className="flex flex-col flex-1 overflow-hidden md:hidden">
-          {/* Tab bar */}
-          <div className="flex border-b border-app-border bg-app-panel flex-shrink-0">
-            {mobileTabs.map(({ key, label }) => (
+          {/* Content area — bottom padding to clear the fixed nav bar */}
+          <div className="flex-1 overflow-hidden flex flex-col" style={{ paddingBottom: "calc(60px + env(safe-area-inset-bottom))" }}>
+            {mobileTab === "chat"    && <ChatPanel devis={devis} onUpdate={handleUpdate} />}
+            {mobileTab === "form"    && <FormPanel devis={devis} onChange={setDevis} />}
+            {mobileTab === "preview" && <PreviewWrapper devis={devis} />}
+          </div>
+
+          {/* Bottom nav bar — thumb-friendly */}
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-app-border bg-app-panel"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
+            {mobileTabs.map(({ key, icon, label }) => (
               <button
                 key={key}
                 onClick={() => setMobileTab(key)}
-                className={`flex-1 py-3 text-[10px] font-bold tracking-[1px] uppercase transition-colors border-none cursor-pointer ${
+                className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[60px] border-none cursor-pointer transition-colors ${
                   mobileTab === key
-                    ? "text-gold border-b-2 border-gold bg-app-bg"
+                    ? "text-gold bg-app-bg"
                     : "text-app-muted bg-transparent"
                 }`}
               >
-                {label}
+                <span className={`text-[18px] leading-none transition-transform ${mobileTab === key ? "scale-110" : ""}`}>
+                  {icon}
+                </span>
+                <span className={`text-[10px] font-bold tracking-[1px] uppercase ${mobileTab === key ? "text-gold" : ""}`}>
+                  {label}
+                </span>
+                {mobileTab === key && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-gold" style={{ position: "static", display: "block", width: "32px", height: "2px", background: "var(--color-gold, #b89c5a)", borderRadius: "1px" }} />
+                )}
               </button>
             ))}
-          </div>
-          <div className="flex-1 overflow-hidden flex flex-col">
-            {mobileTab === "chat" && <ChatPanel devis={devis} onUpdate={handleUpdate} />}
-            {mobileTab === "form" && <FormPanel devis={devis} onChange={setDevis} />}
-            {mobileTab === "preview" && <PreviewWrapper devis={devis} />}
           </div>
         </div>
 
