@@ -18,6 +18,14 @@
 }
 
 @media print {
+  html, body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   /* Cacher tous les enfants directs de body sauf le portail */
   body > *:not(#print-wrapper) {
     display: none !important;
@@ -26,7 +34,8 @@
   /* Afficher le document */
   #print-wrapper {
     display: block !important;
-    background: white;
+    background: white !important;
+    width: 100% !important;
   }
 
   #doc-print {
@@ -34,6 +43,8 @@
     padding: 15mm !important;
     font-size: 11pt !important;
     min-height: unset !important;
+    break-after: avoid !important;
+    page-break-after: avoid !important;
   }
 
   @page {
