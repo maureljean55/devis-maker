@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import TopBar from "@/components/TopBar";
 import FormPanel from "@/components/FormPanel";
@@ -76,21 +76,32 @@ const mobileTabs: { key: MobileTab; icon: string; label: string }[] = [
 ];
 
 export default function Home() {
-  const [devis, setDevis]             = useState<DevisData>(initialDevis);
-  const [sideTab, setSideTab]         = useState<SideTab>("chat");
-  const [mobileTab, setMobileTab]     = useState<MobileTab>("chat");
-  const [mounted, setMounted]         = useState(false);
+  const [devis, setDevis]               = useState<DevisData>(initialDevis);
+  const [sideTab, setSideTab]           = useState<SideTab>("chat");
+  const [mobileTab, setMobileTab]       = useState<MobileTab>("chat");
+  const [mounted, setMounted]           = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
+
+  // Ref toujours synchrone avec le dernier devis — permet à handleUpdate
+  // de retourner le nouveau devis sans attendre le prochain render React
+  const devisRef = useRef<DevisData>(initialDevis);
+  devisRef.current = devis; // mis à jour à chaque render, inline et synchrone
 
   useEffect(() => { setMounted(true); }, []);
 
   /** Wrapper onChange pour FormPanel : recalcule toujours les lettres */
   const handleDevisChange = (newDevis: DevisData) => {
-    setDevis(withLettres(newDevis));
+    const d = withLettres(newDevis);
+    devisRef.current = d;
+    setDevis(d);
   };
 
-  const handleUpdate = (update: DevisUpdate) => {
-    setDevis((current) => applyUpdate(current, update));
+  /** Retourne le nouveau devis immédiatement (utilisé par ChatPanel pour sauvegarder) */
+  const handleUpdate = (update: DevisUpdate): DevisData => {
+    const newDevis = applyUpdate(devisRef.current, update);
+    devisRef.current = newDevis;
+    setDevis(newDevis);
+    return newDevis;
   };
 
   /** Restaurer un devis depuis l'historique de chat */

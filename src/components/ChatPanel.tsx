@@ -5,7 +5,7 @@ import { ChatMessage, ChatResponse, DevisData, DevisUpdate } from "@/lib/types";
 
 interface ChatPanelProps {
   devis: DevisData;
-  onUpdate: (update: DevisUpdate) => void;
+  onUpdate: (update: DevisUpdate) => DevisData;
   messages: ChatMessage[];
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   onDevisRestore: (devis: DevisData) => void;
@@ -145,14 +145,15 @@ export default function ChatPanel({ devis, onUpdate, messages, setMessages, onDe
         body: JSON.stringify({ messages: newMessages, currentDevis: devis }),
       });
       const data: ChatResponse = await res.json();
-      if (data.update) onUpdate(data.update);
+      // Appliquer la mise à jour ET récupérer le nouveau devis immédiatement
+      const updatedDevis = data.update ? onUpdate(data.update) : devis;
 
       const assistantMsg: ChatMessage = { role: "assistant", content: data.message };
       setMessages((prev) => [...prev, assistantMsg]);
 
-      // Sauvegarder dans Supabase (en background) — inclut le devis courant
+      // Sauvegarder avec le devis à jour (pas l'ancien état stale)
       const sessionId = await ensureSession(text);
-      saveMessages(sessionId, [userMsg, assistantMsg], devis);
+      saveMessages(sessionId, [userMsg, assistantMsg], updatedDevis);
 
     } catch {
       setMessages((prev) => [
