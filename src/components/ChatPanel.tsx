@@ -3,19 +3,20 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { ChatMessage, ChatResponse, DevisData, DevisUpdate } from "@/lib/types";
 
-interface ChatPanelProps {
-  devis: DevisData;
-  onUpdate: (update: DevisUpdate) => void;
-}
-
-const WELCOME: ChatMessage = {
+export const WELCOME_MESSAGE: ChatMessage = {
   role: "assistant",
   content:
     "Bonjour ! Décrivez votre devis en langage naturel et je remplirai tout automatiquement.\n\nExemple :\n« Devis pour Mr Koffi, aménagement cuisine villa Cocody, 4 meubles bas MDF à 85 000 FCFA, 2 meubles hauts à 60 000 FCFA, main d'œuvre 120 000 FCFA »",
 };
 
-export default function ChatPanel({ devis, onUpdate }: ChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
+interface ChatPanelProps {
+  devis: DevisData;
+  onUpdate: (update: DevisUpdate) => void;
+  messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+}
+
+export default function ChatPanel({ devis, onUpdate, messages, setMessages }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);

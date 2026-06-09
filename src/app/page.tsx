@@ -7,7 +7,8 @@ import FormPanel from "@/components/FormPanel";
 import ChatPanel from "@/components/ChatPanel";
 import PreviewWrapper from "@/components/PreviewWrapper";
 import DevisDoc from "@/components/DevisDoc";
-import { DevisData, DevisUpdate } from "@/lib/types";
+import { ChatMessage, DevisData, DevisUpdate } from "@/lib/types";
+import { WELCOME_MESSAGE } from "@/components/ChatPanel";
 
 function genId() {
   return Math.random().toString(36).slice(2);
@@ -66,6 +67,7 @@ export default function Home() {
   const [sideTab, setSideTab] = useState<SideTab>("chat");
   const [mobileTab, setMobileTab] = useState<MobileTab>("chat");
   const [mounted, setMounted] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -82,10 +84,21 @@ export default function Home() {
         <div className="flex flex-col flex-1 overflow-hidden md:hidden">
           {/* Content area — bottom padding to clear the fixed nav bar */}
           <div className="flex-1 overflow-hidden flex flex-col" style={{ paddingBottom: "calc(60px + env(safe-area-inset-bottom))" }}>
-            {mobileTab === "chat"    && <ChatPanel devis={devis} onUpdate={handleUpdate} />}
+            {mobileTab === "chat"    && <ChatPanel devis={devis} onUpdate={handleUpdate} messages={chatMessages} setMessages={setChatMessages} />}
             {mobileTab === "form"    && <FormPanel devis={devis} onChange={setDevis} />}
             {mobileTab === "preview" && <PreviewWrapper devis={devis} />}
           </div>
+
+          {/* Bouton PDF flottant — visible uniquement sur l'onglet Aperçu */}
+          {mobileTab === "preview" && (
+            <button
+              onClick={() => window.print()}
+              className="fixed right-4 z-40 bg-gold text-white font-bold tracking-[1.5px] uppercase shadow-lg cursor-pointer border-none px-5 py-3 text-[12px] hover:opacity-90 transition-opacity"
+              style={{ bottom: "calc(60px + env(safe-area-inset-bottom) + 12px)" }}
+            >
+              ⬇ Télécharger PDF
+            </button>
+          )}
 
           {/* Bottom nav bar — thumb-friendly */}
           <div
@@ -136,7 +149,7 @@ export default function Home() {
               ))}
             </div>
             {sideTab === "chat" ? (
-              <ChatPanel devis={devis} onUpdate={handleUpdate} />
+              <ChatPanel devis={devis} onUpdate={handleUpdate} messages={chatMessages} setMessages={setChatMessages} />
             ) : (
               <FormPanel devis={devis} onChange={setDevis} />
             )}

@@ -35,11 +35,9 @@ export default function TopBar({ onPrint }: TopBarProps) {
         </Link>
         <button
           onClick={onPrint}
-          className="bg-gold text-white px-3 md:px-6 py-2 md:py-2.5 text-[11px] md:text-[12px] font-bold tracking-[1px] md:tracking-[1.5px] uppercase cursor-pointer hover:opacity-85 transition-opacity border-none"
+          className="hidden md:block bg-gold text-white px-3 md:px-6 py-2 md:py-2.5 text-[11px] md:text-[12px] font-bold tracking-[1px] md:tracking-[1.5px] uppercase cursor-pointer hover:opacity-85 transition-opacity border-none"
         >
-          <span className="hidden sm:inline">⬇ Télécharger </span>
-          <span className="sm:hidden">⬇ </span>
-          PDF
+          ⬇ Télécharger PDF
         </button>
       </div>
     </header>
