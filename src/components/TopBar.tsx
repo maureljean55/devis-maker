@@ -30,8 +30,7 @@ export default function TopBar({ onPrint }: TopBarProps) {
           href="/prospection"
           className="px-3 md:px-5 py-2 md:py-2.5 text-[11px] md:text-[12px] font-bold tracking-[1px] md:tracking-[1.5px] uppercase border border-gold text-gold hover:bg-gold hover:text-black transition-all no-underline"
         >
-          <span className="hidden sm:inline">⬢ Prospection</span>
-          <span className="sm:hidden">⬢</span>
+          ⬢ Prospection
         </Link>
         <button
           onClick={onPrint}
