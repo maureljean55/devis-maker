@@ -36,7 +36,7 @@ Réponds TOUJOURS avec un JSON valide ayant exactement cette structure :
   "titre_travaux": "string ou null (TOUJOURS EN MAJUSCULES)",
   "lignes": [...tableau complet...] ou null,
   "main_oeuvre": nombre ou null,
-  "montant_lettres": "string en toutes lettres ou null",
+  "montant_lettres": null,
   "avance_pct": nombre ou null
 }
 
@@ -56,7 +56,7 @@ Exemple :
 ═══ AUTRES RÈGLES ═══
 - Date du jour : ${today}
 - Montants en Francs CFA (FCFA)
-- Si le total est calculable après une modification, mets à jour montant_lettres en toutes lettres
+- Ne génère JAMAIS montant_lettres — il est calculé automatiquement par l'application
 - Dans "message" : sois concis, confirme précisément ce qui a changé`;
 
 export async function POST(req: NextRequest) {

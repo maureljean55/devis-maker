@@ -8,6 +8,7 @@ interface ChatPanelProps {
   onUpdate: (update: DevisUpdate) => void;
   messages: ChatMessage[];
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  onDevisRestore: (devis: DevisData) => void;
 }
 
 export const WELCOME_MESSAGE: ChatMessage = {
@@ -32,7 +33,7 @@ function fmtSessionDate(d: string) {
   return da.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
 }
 
-export default function ChatPanel({ devis, onUpdate, messages, setMessages }: ChatPanelProps) {
+export default function ChatPanel({ devis, onUpdate, messages, setMessages, onDevisRestore }: ChatPanelProps) {
   const [input, setInput]               = useState("");
   const [loading, setLoading]           = useState(false);
   const [showHistory, setShowHistory]   = useState(false);
@@ -81,25 +82,30 @@ export default function ChatPanel({ devis, onUpdate, messages, setMessages }: Ch
     return session.id;
   };
 
-  // Sauvegarder des messages dans une session
-  const saveMessages = async (sessionId: string, msgs: ChatMessage[]) => {
+  // Sauvegarder des messages + snapshot du devis dans la session
+  const saveMessages = async (sessionId: string, msgs: ChatMessage[], devisSnapshot?: DevisData) => {
     await fetch(`/api/chat-sessions/${sessionId}/messages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: msgs }),
+      body: JSON.stringify({ messages: msgs, devis_data: devisSnapshot ?? null }),
     });
   };
 
-  // Charger une session
+  // Charger une session (messages + devis associé)
   const loadSession = async (session: Session) => {
     const r = await fetch(`/api/chat-sessions/${session.id}/messages`);
-    const msgs = await r.json();
+    const data = await r.json();
+    const msgs = data.messages ?? data; // rétrocompat si ancien format
     if (Array.isArray(msgs) && msgs.length > 0) {
       setMessages(msgs.map((m: { role: string; content: string }) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
       })));
       setCurrentSessionId(session.id);
+    }
+    // Restaurer le devis associé à cette session
+    if (data.devis_data) {
+      onDevisRestore(data.devis_data);
     }
     setShowHistory(false);
   };
@@ -144,9 +150,9 @@ export default function ChatPanel({ devis, onUpdate, messages, setMessages }: Ch
       const assistantMsg: ChatMessage = { role: "assistant", content: data.message };
       setMessages((prev) => [...prev, assistantMsg]);
 
-      // Sauvegarder dans Supabase (en background)
+      // Sauvegarder dans Supabase (en background) — inclut le devis courant
       const sessionId = await ensureSession(text);
-      saveMessages(sessionId, [userMsg, assistantMsg]);
+      saveMessages(sessionId, [userMsg, assistantMsg], devis);
 
     } catch {
       setMessages((prev) => [

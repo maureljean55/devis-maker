@@ -16,7 +16,7 @@ function serverSupabase() {
   );
 }
 
-// GET — messages d'une session
+// GET — messages + devis_data de la session
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
@@ -25,17 +25,29 @@ export async function GET(
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const { data, error } = await supabase
-    .from("chat_messages")
-    .select("role, content, created_at")
-    .eq("session_id", params.id)
-    .order("created_at", { ascending: true });
+  const [messagesRes, sessionRes] = await Promise.all([
+    supabase
+      .from("chat_messages")
+      .select("role, content, created_at")
+      .eq("session_id", params.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("chat_sessions")
+      .select("devis_data")
+      .eq("id", params.id)
+      .eq("user_id", user.id)
+      .single(),
+  ]);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
+  if (messagesRes.error) return NextResponse.json({ error: messagesRes.error.message }, { status: 500 });
+
+  return NextResponse.json({
+    messages:   messagesRes.data,
+    devis_data: sessionRes.data?.devis_data ?? null,
+  });
 }
 
-// POST — ajouter des messages à une session
+// POST — ajouter des messages + mettre à jour devis_data
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -44,7 +56,7 @@ export async function POST(
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr || !user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const { messages } = await req.json();
+  const { messages, devis_data } = await req.json();
   if (!Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: "Messages invalides" }, { status: 400 });
   }
@@ -55,15 +67,18 @@ export async function POST(
     content:    m.content,
   }));
 
-  const { error } = await supabase.from("chat_messages").insert(rows);
+  const [insertRes] = await Promise.all([
+    supabase.from("chat_messages").insert(rows),
+    supabase
+      .from("chat_sessions")
+      .update({
+        updated_at: new Date().toISOString(),
+        ...(devis_data ? { devis_data } : {}),
+      })
+      .eq("id", params.id)
+      .eq("user_id", user.id),
+  ]);
 
-  // Met à jour updated_at de la session
-  await supabase
-    .from("chat_sessions")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("id", params.id)
-    .eq("user_id", user.id);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (insertRes.error) return NextResponse.json({ error: insertRes.error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
