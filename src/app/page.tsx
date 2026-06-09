@@ -77,7 +77,7 @@ export default function Home() {
 
   return (
     <>
-      <div className="flex flex-col h-screen overflow-hidden bg-app-bg">
+      <div className="flex flex-col overflow-hidden bg-app-bg" style={{ height: "100dvh" }}>
         <TopBar onPrint={() => window.print()} />
 
         {/* ── MOBILE (< md) ───────────────────── */}
