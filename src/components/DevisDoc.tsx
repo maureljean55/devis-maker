@@ -306,12 +306,17 @@ export default function DevisDoc({ devis, docId = "doc-preview" }: DevisDocProps
             textAlign: "center",
           }}
         >
-          <span style={{ color: "#111" }}>
-            TUTTO LEGNO MENUISERIE INDUSTRIELLE SARL COCODY CITE DES ARTS /CONTACT :{" "}
-          </span>
-          <span style={{ color: "#cc2200" }}>
-            07 07 55 35 45 – 05 04 53 59 53 /16 BP 336 Abj 16
-          </span>
+          <div style={{ color: "#111" }}>
+            TUTTO LEGNO MENUISERIE INDUSTRIELLE SARL — ABIDJAN, COCODY ABATTA CITÉ BCEAO EN BAS, LOT : 116, ÎLOT : 10
+          </div>
+          <div>
+            <span style={{ color: "#cc2200" }}>
+              07 07 55 35 45 – 05 04 53 59 53
+            </span>
+            <span style={{ color: "#111" }}>
+              {" "}— N° IDENTIFICATION : CI-2025-0042790P
+            </span>
+          </div>
         </div>
       </div>
     </div>
