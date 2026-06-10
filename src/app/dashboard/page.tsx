@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -28,10 +28,17 @@ function fmtMonth(d: string) {
   return new Date(d).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 }
 
+function moisOptionValue(d: string) {
+  const da = new Date(d);
+  return `${da.getFullYear()}-${String(da.getMonth() + 1).padStart(2, "0")}`;
+}
+
 export default function DashboardPage() {
-  const [devis, setDevis]     = useState<DevisImprime[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router  = useRouter();
+  const [devis, setDevis]       = useState<DevisImprime[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [search, setSearch]     = useState("");
+  const [filterMois, setFilterMois] = useState("");
+  const router   = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
@@ -46,10 +53,35 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
-  // Stats
-  const total     = devis.reduce((a, d) => a + (d.total || 0), 0);
-  const moyenne   = devis.length ? total / devis.length : 0;
-  const ceMois    = devis.filter((d) => {
+  // Liste des mois disponibles pour le filtre
+  const moisDisponibles = useMemo(() => {
+    const seen = new Set<string>();
+    const result: { value: string; label: string }[] = [];
+    devis.forEach((d) => {
+      const val = moisOptionValue(d.imprime_a);
+      if (!seen.has(val)) {
+        seen.add(val);
+        result.push({ value: val, label: fmtMonth(d.imprime_a) });
+      }
+    });
+    return result.sort((a, b) => b.value.localeCompare(a.value));
+  }, [devis]);
+
+  // Devis filtrés
+  const devisFiltres = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return devis.filter((d) => {
+      const matchSearch = !q || [d.client_nom, d.client_objet, d.titre_travaux]
+        .some((v) => (v || "").toLowerCase().includes(q));
+      const matchMois = !filterMois || moisOptionValue(d.imprime_a) === filterMois;
+      return matchSearch && matchMois;
+    });
+  }, [devis, search, filterMois]);
+
+  // Stats sur tous les devis (pas les filtrés)
+  const total   = devis.reduce((a, d) => a + (d.total || 0), 0);
+  const moyenne = devis.length ? total / devis.length : 0;
+  const ceMois  = devis.filter((d) => {
     const now = new Date();
     const da  = new Date(d.imprime_a);
     return da.getMonth() === now.getMonth() && da.getFullYear() === now.getFullYear();
@@ -64,7 +96,9 @@ export default function DashboardPage() {
   const moisKeys = Object.keys(parMois).slice(0, 6);
   const maxMois  = Math.max(...Object.values(parMois), 1);
 
-  const card = "bg-app-panel border border-app-border p-4 sm:p-5";
+  const filtreActif = search || filterMois;
+
+  const card  = "bg-app-panel border border-app-border p-4 sm:p-5";
   const label = "text-[10px] font-bold tracking-[2px] uppercase text-app-muted mb-1";
   const val   = "text-gold font-bold text-[20px] sm:text-[24px]";
 
@@ -153,15 +187,61 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Liste des derniers devis */}
-            <div className={card}>
-              <div className="text-[10px] font-bold tracking-[2px] uppercase text-gold mb-4">
-                Derniers devis imprimés
+            {/* Recherche + filtres */}
+            <div className="flex flex-col sm:flex-row gap-2 mb-3">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-app-muted text-[12px]">⌕</span>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Rechercher un client, un objet…"
+                  className="w-full bg-app-panel border border-app-border text-app-text text-[12px] pl-8 pr-3 py-2 outline-none focus:border-gold placeholder:text-app-muted/50 transition-colors"
+                />
               </div>
+              <select
+                value={filterMois}
+                onChange={(e) => setFilterMois(e.target.value)}
+                className="bg-app-panel border border-app-border text-app-text text-[11px] px-3 py-2 outline-none focus:border-gold cursor-pointer capitalize sm:w-48"
+              >
+                <option value="">Tous les mois</option>
+                {moisDisponibles.map((m) => (
+                  <option key={m.value} value={m.value} className="capitalize">{m.label}</option>
+                ))}
+              </select>
+              {filtreActif && (
+                <button
+                  onClick={() => { setSearch(""); setFilterMois(""); }}
+                  className="px-3 py-2 text-[11px] font-bold tracking-[1px] uppercase border border-app-border text-app-muted hover:border-red-500 hover:text-red-400 transition-all bg-transparent cursor-pointer whitespace-nowrap"
+                >
+                  ✕ Réinitialiser
+                </button>
+              )}
+            </div>
+
+            {/* Liste des devis */}
+            <div className={card}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-[10px] font-bold tracking-[2px] uppercase text-gold">
+                  {filtreActif
+                    ? `${devisFiltres.length} résultat${devisFiltres.length > 1 ? "s" : ""}`
+                    : "Derniers devis imprimés"}
+                </div>
+                {filtreActif && (
+                  <div className="text-[10px] text-app-muted">
+                    CA : <span className="text-gold font-bold">{fmt(devisFiltres.reduce((a, d) => a + d.total, 0))}</span>
+                  </div>
+                )}
+              </div>
+
               {devis.length === 0 ? (
                 <div className="text-app-muted text-[12px] py-6 text-center">
                   Aucun devis imprimé pour l&apos;instant.<br />
                   <span className="text-[11px]">Les devis apparaissent ici quand vous téléchargez un PDF.</span>
+                </div>
+              ) : devisFiltres.length === 0 ? (
+                <div className="text-app-muted text-[12px] py-8 text-center">
+                  Aucun devis ne correspond à votre recherche.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -175,7 +255,7 @@ export default function DashboardPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {devis.map((d) => (
+                      {devisFiltres.map((d) => (
                         <tr key={d.id} className="border-b border-app-border/50 hover:bg-app-input/30 transition-colors">
                           <td className="py-2.5 text-app-text">{d.client_nom || "—"}</td>
                           <td className="py-2.5 text-app-muted hidden sm:table-cell">{d.client_objet || d.titre_travaux || "—"}</td>
