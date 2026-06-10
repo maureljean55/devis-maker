@@ -36,7 +36,7 @@ export default function TopBar({ onPrint }: TopBarProps) {
       <div className="flex items-center gap-2 md:gap-3">
         <Link
           href="/dashboard"
-          className="px-3 md:px-4 py-2 text-[11px] font-bold tracking-[1px] uppercase border border-app-border text-app-muted hover:border-gold hover:text-gold transition-all no-underline hidden sm:block"
+          className="px-3 md:px-4 py-2 text-[11px] font-bold tracking-[1px] uppercase border border-app-border text-app-muted hover:border-gold hover:text-gold transition-all no-underline"
         >
           ▦ Stats
         </Link>
