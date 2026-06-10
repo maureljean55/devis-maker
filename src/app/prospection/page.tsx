@@ -8,6 +8,7 @@ interface Prospect {
   id: number;
   nom_entreprise: string;
   telephone: string | null;
+  email: string | null;
   site_web: string | null;
   adresse: string | null;
   secteur: string | null;
@@ -16,6 +17,13 @@ interface Prospect {
   statut: "nouveau" | "contacte" | "repondu";
   date_ajout: string;
   date_contact: string | null;
+}
+
+interface EmailModal {
+  prospect: Prospect;
+  to: string;
+  subject: string;
+  body: string;
 }
 
 const SECTEURS = [
@@ -27,6 +35,14 @@ const SECTEURS = [
   "Construction",
   "BTP",
 ];
+
+function buildEmailSubject(p: Prospect) {
+  return `Tutto Legno – Menuiserie haut de gamme pour ${p.nom_entreprise}`;
+}
+
+function buildEmailBody(message: string) {
+  return `Bonjour,\n\n${message}\n\nCordialement,\nTutto Legno\nTél : 07 07 55 35 45\nwww.tutto-legno.ci\nCocody Abatta, Abidjan`;
+}
 
 /* ── Composant principal ─────────────────────────────────────────────────── */
 export default function ProspectionPage() {
@@ -42,11 +58,15 @@ export default function ProspectionPage() {
   const [expanded, setExpanded]       = useState<number | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showLog, setShowLog]         = useState(false);
+  const [emailModal, setEmailModal]   = useState<EmailModal | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailFeedback, setEmailFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
 
   // Formulaire ajout manuel
   const [newProspect, setNewProspect] = useState({
     nom_entreprise: "",
     telephone: "",
+    email: "",
     site_web: "",
     adresse: "",
     secteur: "Promoteur immobilier",
@@ -65,7 +85,7 @@ export default function ProspectionPage() {
 
   /* ── Filtre ─────────────────────────────────────────────────────────────── */
   const filtered = prospects.filter((p) => {
-    const s = filterSecteur === "Tous les secteurs" || p.secteur === filterSecteur;
+    const s  = filterSecteur === "Tous les secteurs" || p.secteur === filterSecteur;
     const st = filterStatut === "Tous" || p.statut === filterStatut;
     const q  = search === "" || p.nom_entreprise.toLowerCase().includes(search.toLowerCase());
     return s && st && q;
@@ -82,7 +102,6 @@ export default function ProspectionPage() {
       body: JSON.stringify({ mode }),
     });
     const data = await res.json();
-    // Affiche le log (succès) ou l'erreur avec couleur différente côté UI
     setScrapeLog(data.log || data.error || "Terminé.");
     setScraping(false);
     if (data.ok) fetchProspects();
@@ -148,7 +167,7 @@ export default function ProspectionPage() {
       body: JSON.stringify(newProspect),
     });
     if (res.ok) {
-      setNewProspect({ nom_entreprise: "", telephone: "", site_web: "", adresse: "", secteur: "Promoteur immobilier" });
+      setNewProspect({ nom_entreprise: "", telephone: "", email: "", site_web: "", adresse: "", secteur: "Promoteur immobilier" });
       setShowAddForm(false);
       fetchProspects();
     } else {
@@ -157,12 +176,56 @@ export default function ProspectionPage() {
     }
   };
 
+  /* ── Ouvrir modale email ────────────────────────────────────────────────── */
+  const ouvrirEmail = (p: Prospect) => {
+    setEmailFeedback(null);
+    setEmailModal({
+      prospect: p,
+      to:      p.email || "",
+      subject: buildEmailSubject(p),
+      body:    buildEmailBody(p.message_genere || ""),
+    });
+  };
+
+  /* ── Envoyer email ──────────────────────────────────────────────────────── */
+  const envoyerEmail = async () => {
+    if (!emailModal) return;
+    setSendingEmail(true);
+    setEmailFeedback(null);
+    const res = await fetch("/api/prospection/send-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prospect_id: emailModal.prospect.id,
+        to:      emailModal.to,
+        subject: emailModal.subject,
+        body:    emailModal.body,
+      }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setEmailFeedback({ ok: true, msg: "Email envoyé avec succès !" });
+      setProspects((prev) =>
+        prev.map((p) =>
+          p.id === emailModal.prospect.id
+            ? { ...p, email: emailModal.to, statut: "contacte", date_contact: new Date().toISOString() }
+            : p
+        )
+      );
+      setTimeout(() => setEmailModal(null), 1800);
+    } else {
+      setEmailFeedback({ ok: false, msg: data.error || "Erreur lors de l'envoi" });
+    }
+    setSendingEmail(false);
+  };
+
   /* ── Stats ──────────────────────────────────────────────────────────────── */
   const stats = {
     total:    prospects.length,
     nouveaux: prospects.filter((p) => p.statut === "nouveau").length,
     contactes:prospects.filter((p) => p.statut === "contacte").length,
     avecTel:  prospects.filter((p) => p.telephone).length,
+    avecEmail:prospects.filter((p) => p.email).length,
     avecMsg:  prospects.filter((p) => p.message_genere).length,
   };
 
@@ -173,7 +236,6 @@ export default function ProspectionPage() {
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
       <header className="bg-[#1a1200] border-b-2 border-[#B8892A] px-6 py-4 flex items-center justify-between gap-4 flex-wrap sticky top-0 z-50">
         <div className="flex items-center gap-4">
-          {/* Retour au générateur de devis */}
           <Link
             href="/"
             className="text-[#B8892A] hover:text-[#d4a843] text-[11px] font-bold tracking-[1.5px] uppercase transition-colors flex items-center gap-1.5"
@@ -186,13 +248,12 @@ export default function ProspectionPage() {
               Tutto Legno — Prospection
             </div>
             <div className="text-[#888] text-[10px] tracking-[1px]">
-              Agent WhatsApp automatisé
+              Agent de prospection automatisé
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Bouton démo */}
           <button
             onClick={() => lancerScraping("demo")}
             disabled={scraping}
@@ -200,7 +261,6 @@ export default function ProspectionPage() {
           >
             {scraping ? "⏳ En cours..." : "▷ Démo (10 prospects)"}
           </button>
-          {/* Bouton scraping réel */}
           <button
             onClick={() => lancerScraping("full")}
             disabled={scraping}
@@ -208,7 +268,6 @@ export default function ProspectionPage() {
           >
             {scraping ? "⏳ Scraping..." : "⬢ Scraping Google"}
           </button>
-          {/* Compteur */}
           <div className="bg-[#B8892A] text-black px-4 py-2 font-bold text-[12px] rounded-full">
             {filtered.length} prospect{filtered.length > 1 ? "s" : ""}
           </div>
@@ -241,6 +300,7 @@ export default function ProspectionPage() {
           { label: "Nouveaux",    val: stats.nouveaux,  green: true },
           { label: "Contactés",   val: stats.contactes },
           { label: "Avec numéro", val: stats.avecTel },
+          { label: "Avec email",  val: stats.avecEmail },
           { label: "Avec message",val: stats.avecMsg },
         ].map(({ label, val, green }) => (
           <div key={label} className="flex items-center gap-1.5">
@@ -252,7 +312,6 @@ export default function ProspectionPage() {
 
       {/* ── BARRE D'OUTILS ──────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-[#2e2e2e] flex-wrap">
-        {/* Filtre secteur */}
         <select
           value={filterSecteur}
           onChange={(e) => setFilterSecteur(e.target.value)}
@@ -261,7 +320,6 @@ export default function ProspectionPage() {
           {SECTEURS.map((s) => <option key={s}>{s}</option>)}
         </select>
 
-        {/* Filtre statut */}
         <select
           value={filterStatut}
           onChange={(e) => setFilterStatut(e.target.value)}
@@ -272,7 +330,6 @@ export default function ProspectionPage() {
           ))}
         </select>
 
-        {/* Recherche */}
         <input
           type="text"
           value={search}
@@ -283,7 +340,6 @@ export default function ProspectionPage() {
 
         <div className="flex-1" />
 
-        {/* Générer tous les messages */}
         {stats.avecMsg < stats.total && (
           <button
             onClick={genererTousMessages}
@@ -294,7 +350,6 @@ export default function ProspectionPage() {
           </button>
         )}
 
-        {/* Ajouter manuellement */}
         <button
           onClick={() => setShowAddForm(!showAddForm)}
           className="px-4 py-2 text-[11px] font-bold tracking-[1px] uppercase bg-[#232323] border border-[#2e2e2e] text-[#e8e8e8] hover:border-[#B8892A] transition-colors cursor-pointer"
@@ -309,16 +364,17 @@ export default function ProspectionPage() {
           <div className="text-[11px] font-bold tracking-[1.5px] uppercase text-[#B8892A] mb-3">
             Ajouter un prospect manuellement
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {[
-              { key: "nom_entreprise", placeholder: "Nom entreprise *", required: true },
+              { key: "nom_entreprise", placeholder: "Nom entreprise *" },
               { key: "telephone",      placeholder: "Téléphone" },
+              { key: "email",          placeholder: "Email" },
               { key: "site_web",       placeholder: "Site web" },
               { key: "adresse",        placeholder: "Adresse / Quartier" },
             ].map(({ key, placeholder }) => (
               <input
                 key={key}
-                type="text"
+                type={key === "email" ? "email" : "text"}
                 placeholder={placeholder}
                 value={newProspect[key as keyof typeof newProspect]}
                 onChange={(e) => setNewProspect((p) => ({ ...p, [key]: e.target.value }))}
@@ -353,21 +409,17 @@ export default function ProspectionPage() {
       {/* ── TABLEAU ─────────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-auto px-6 py-4">
         {loading ? (
-          <div className="text-center text-[#888] py-20 text-[13px]">
-            Chargement...
-          </div>
+          <div className="text-center text-[#888] py-20 text-[13px]">Chargement...</div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-[#888] text-[13px] mb-2">Aucun prospect trouvé.</div>
-            <div className="text-[#555] text-[11px]">
-              Lance le scraping ou ajoute un prospect manuellement.
-            </div>
+            <div className="text-[#555] text-[11px]">Lance le scraping ou ajoute un prospect manuellement.</div>
           </div>
         ) : (
           <table className="w-full border-collapse text-[12px]">
             <thead>
               <tr className="border-b-2 border-[#B8892A]">
-                {["Entreprise", "Secteur", "Téléphone", "Statut", "Actions"].map((h) => (
+                {["Entreprise", "Secteur", "Contact", "Statut", "Actions"].map((h) => (
                   <th
                     key={h}
                     className="text-left text-[#B8892A] font-bold tracking-[1.2px] uppercase text-[10px] py-3 px-3 bg-[#1a1a1a]"
@@ -418,9 +470,16 @@ export default function ProspectionPage() {
                       </span>
                     </td>
 
-                    {/* Téléphone */}
-                    <td className="py-3 px-3 text-[#d4a843] whitespace-nowrap font-mono">
-                      {p.telephone || <span className="text-[#444]">—</span>}
+                    {/* Contact (tel + email) */}
+                    <td className="py-3 px-3">
+                      {p.telephone ? (
+                        <div className="text-[#d4a843] font-mono text-[11px]">{p.telephone}</div>
+                      ) : (
+                        <div className="text-[#444] text-[11px]">Pas de numéro</div>
+                      )}
+                      {p.email && (
+                        <div className="text-[#888] text-[10px] mt-0.5 truncate max-w-[140px]">{p.email}</div>
+                      )}
                     </td>
 
                     {/* Statut */}
@@ -464,12 +523,18 @@ export default function ProspectionPage() {
                             onClick={() => p.statut !== "contacte" && marquerContacte(p.id)}
                             className="px-3 py-1 text-[10px] font-bold bg-[#25D366] text-black hover:opacity-85 transition-opacity whitespace-nowrap"
                           >
-                            📲 WhatsApp
+                            📲 WA
                           </a>
-                        ) : p.telephone && p.message_genere ? (
-                          <span className="text-[#555] text-[10px]">Lien manquant</span>
-                        ) : (
-                          <span className="text-[#333] text-[10px]">Pas de numéro</span>
+                        ) : null}
+
+                        {/* Email */}
+                        {p.message_genere && (
+                          <button
+                            onClick={() => ouvrirEmail(p)}
+                            className="px-3 py-1 text-[10px] font-bold bg-[#1a3a5c] border border-[#2a5a8c] text-[#7ab8f5] hover:bg-[#2a5a8c] transition-colors whitespace-nowrap cursor-pointer"
+                          >
+                            ✉ Email
+                          </button>
                         )}
 
                         {/* Supprimer */}
@@ -489,7 +554,7 @@ export default function ProspectionPage() {
                     <tr key={`${p.id}-msg`} className="border-b border-[#2e2e2e] bg-[#151515]">
                       <td colSpan={5} className="px-6 py-4">
                         <div className="text-[11px] font-bold tracking-[1.2px] uppercase text-[#B8892A] mb-2">
-                          Message WhatsApp généré
+                          Message généré
                         </div>
                         {p.message_genere ? (
                           <pre className="whitespace-pre-wrap text-[12px] text-[#ccc] leading-relaxed font-sans">
@@ -501,9 +566,7 @@ export default function ProspectionPage() {
                           </div>
                         )}
                         {p.adresse && (
-                          <div className="mt-2 text-[10px] text-[#555]">
-                            📍 {p.adresse}
-                          </div>
+                          <div className="mt-2 text-[10px] text-[#555]">📍 {p.adresse}</div>
                         )}
                         {p.date_contact && (
                           <div className="mt-1 text-[10px] text-[#555]">
@@ -519,6 +582,98 @@ export default function ProspectionPage() {
           </table>
         )}
       </div>
+
+      {/* ── MODALE EMAIL ────────────────────────────────────────────────────── */}
+      {emailModal && (
+        <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#151515] border border-[#2e2e2e] w-full max-w-xl flex flex-col max-h-[90vh]">
+            {/* Header modale */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#2e2e2e]">
+              <div>
+                <div className="text-[#B8892A] text-[11px] font-bold tracking-[2px] uppercase">Envoyer un email</div>
+                <div className="text-[#888] text-[10px] mt-0.5">{emailModal.prospect.nom_entreprise}</div>
+              </div>
+              <button
+                onClick={() => setEmailModal(null)}
+                className="text-[#888] hover:text-white text-[18px] cursor-pointer leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Corps modale */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+              {/* Destinataire */}
+              <div>
+                <label className="text-[10px] font-bold tracking-[1.5px] uppercase text-[#888] block mb-1">
+                  À (email du destinataire)
+                </label>
+                <input
+                  type="email"
+                  value={emailModal.to}
+                  onChange={(e) => setEmailModal((m) => m ? { ...m, to: e.target.value } : m)}
+                  placeholder="contact@entreprise.ci"
+                  className="w-full bg-[#1a1a1a] border border-[#2e2e2e] text-[#e8e8e8] text-[12px] px-3 py-2 outline-none focus:border-[#B8892A]"
+                />
+              </div>
+
+              {/* Objet */}
+              <div>
+                <label className="text-[10px] font-bold tracking-[1.5px] uppercase text-[#888] block mb-1">
+                  Objet
+                </label>
+                <input
+                  type="text"
+                  value={emailModal.subject}
+                  onChange={(e) => setEmailModal((m) => m ? { ...m, subject: e.target.value } : m)}
+                  className="w-full bg-[#1a1a1a] border border-[#2e2e2e] text-[#e8e8e8] text-[12px] px-3 py-2 outline-none focus:border-[#B8892A]"
+                />
+              </div>
+
+              {/* Corps */}
+              <div>
+                <label className="text-[10px] font-bold tracking-[1.5px] uppercase text-[#888] block mb-1">
+                  Message
+                </label>
+                <textarea
+                  value={emailModal.body}
+                  onChange={(e) => setEmailModal((m) => m ? { ...m, body: e.target.value } : m)}
+                  rows={10}
+                  className="w-full bg-[#1a1a1a] border border-[#2e2e2e] text-[#e8e8e8] text-[12px] px-3 py-2 outline-none focus:border-[#B8892A] resize-none font-sans leading-relaxed"
+                />
+              </div>
+
+              {/* Feedback */}
+              {emailFeedback && (
+                <div className={`text-[12px] px-3 py-2 border ${
+                  emailFeedback.ok
+                    ? "text-[#4ade80] border-[#4ade80]/30 bg-[#4ade80]/5"
+                    : "text-red-400 border-red-500/30 bg-red-500/5"
+                }`}>
+                  {emailFeedback.msg}
+                </div>
+              )}
+            </div>
+
+            {/* Footer modale */}
+            <div className="flex gap-3 px-5 py-4 border-t border-[#2e2e2e]">
+              <button
+                onClick={envoyerEmail}
+                disabled={sendingEmail || !emailModal.to}
+                className="flex-1 px-5 py-2.5 text-[11px] font-bold tracking-[1px] uppercase bg-[#B8892A] text-black hover:opacity-85 transition-opacity disabled:opacity-40 cursor-pointer"
+              >
+                {sendingEmail ? "⏳ Envoi en cours..." : "✉ Envoyer l'email"}
+              </button>
+              <button
+                onClick={() => setEmailModal(null)}
+                className="px-5 py-2.5 text-[11px] font-bold tracking-[1px] uppercase border border-[#2e2e2e] text-[#888] hover:text-white transition-colors cursor-pointer"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── FOOTER ──────────────────────────────────────────────────────────── */}
       <footer className="text-center py-4 text-[#444] text-[10px] border-t border-[#2e2e2e]">

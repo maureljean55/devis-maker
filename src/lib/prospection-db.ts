@@ -6,6 +6,7 @@ export interface Prospect {
   id: number;
   nom_entreprise: string;
   telephone: string | null;
+  email?: string | null;
   site_web: string | null;
   adresse: string | null;
   secteur: string | null;
@@ -32,6 +33,7 @@ function openDb() {
       id              INTEGER PRIMARY KEY AUTOINCREMENT,
       nom_entreprise  TEXT    NOT NULL,
       telephone       TEXT,
+      email           TEXT,
       site_web        TEXT,
       adresse         TEXT,
       secteur         TEXT,
@@ -42,6 +44,9 @@ function openDb() {
       date_contact    TEXT
     )
   `);
+  // migration : ajoute email si la colonne n'existe pas encore
+  try { db.exec("ALTER TABLE prospects ADD COLUMN email TEXT"); } catch { /* déjà présente */ }
+
   return db;
 }
 
@@ -67,12 +72,13 @@ export function insertProspect(
   }
   const result = db
     .prepare(`
-      INSERT INTO prospects (nom_entreprise, telephone, site_web, adresse, secteur)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO prospects (nom_entreprise, telephone, email, site_web, adresse, secteur)
+      VALUES (?, ?, ?, ?, ?, ?)
     `)
     .run(
       data.nom_entreprise.trim(),
       data.telephone || null,
+      data.email || null,
       data.site_web || null,
       data.adresse || null,
       data.secteur || null
@@ -83,7 +89,7 @@ export function insertProspect(
 
 export function updateProspect(
   id: number,
-  fields: Partial<Pick<Prospect, "message_genere" | "lien_whatsapp" | "statut" | "date_contact">>
+  fields: Partial<Pick<Prospect, "message_genere" | "lien_whatsapp" | "statut" | "date_contact" | "email">>
 ) {
   const db = openDb();
   const sets = Object.keys(fields)

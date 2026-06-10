@@ -12,7 +12,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const allowed = ["message_genere", "lien_whatsapp", "statut", "date_contact"];
+    const allowed = ["message_genere", "lien_whatsapp", "statut", "date_contact", "email"];
     const fields: Record<string, string> = {};
 
     for (const key of allowed) {
