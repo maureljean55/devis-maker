@@ -311,7 +311,7 @@ export default function DevisDoc({ devis, docId = "doc-preview" }: DevisDocProps
           </div>
           <div>
             <span style={{ color: "#cc2200" }}>
-              07 07 55 35 45 – 05 04 53 59 53
+              07 07 55 35 45 – Fax : 27 22 36 85 38
             </span>
             <span style={{ color: "#111" }}>
               {" "}— N° IDENTIFICATION : CI-2025-0042790P
