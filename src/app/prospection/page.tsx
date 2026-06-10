@@ -61,6 +61,7 @@ export default function ProspectionPage() {
   const [emailModal, setEmailModal]   = useState<EmailModal | null>(null);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailFeedback, setEmailFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [findingEmail, setFindingEmail] = useState<number | null>(null);
 
   // Formulaire ajout manuel
   const [newProspect, setNewProspect] = useState({
@@ -174,6 +175,25 @@ export default function ProspectionPage() {
       const d = await res.json();
       alert(d.error || "Erreur");
     }
+  };
+
+  /* ── Trouver email automatiquement ─────────────────────────────────────── */
+  const trouverEmail = async (p: Prospect) => {
+    setFindingEmail(p.id);
+    const res = await fetch("/api/prospection/find-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prospect_id: p.id, site_web: p.site_web }),
+    });
+    const data = await res.json();
+    if (res.ok && data.email) {
+      setProspects((prev) =>
+        prev.map((x) => x.id === p.id ? { ...x, email: data.email } : x)
+      );
+    } else {
+      alert(data.error || "Email introuvable sur ce site.");
+    }
+    setFindingEmail(null);
   };
 
   /* ── Ouvrir modale email ────────────────────────────────────────────────── */
@@ -477,8 +497,19 @@ export default function ProspectionPage() {
                       ) : (
                         <div className="text-[#444] text-[11px]">Pas de numéro</div>
                       )}
-                      {p.email && (
+                      {p.email ? (
                         <div className="text-[#888] text-[10px] mt-0.5 truncate max-w-[140px]">{p.email}</div>
+                      ) : p.site_web ? (
+                        <button
+                          onClick={() => trouverEmail(p)}
+                          disabled={findingEmail === p.id}
+                          className="text-[#2a5a8c] hover:text-[#7ab8f5] text-[10px] mt-0.5 cursor-pointer disabled:opacity-40 transition-colors"
+                          title="Chercher l'email sur le site"
+                        >
+                          {findingEmail === p.id ? "⏳ Recherche..." : "⌕ Trouver email"}
+                        </button>
+                      ) : (
+                        <div className="text-[#333] text-[10px] mt-0.5">Pas de site web</div>
                       )}
                     </td>
 
