@@ -231,8 +231,8 @@ export default function DevisDoc({ devis, docId = "doc-preview" }: DevisDocProps
           })()}
           {[
             { label: "TOTAL MATERIELS", value: fmt(totalMat) },
-            { label: "MAIN D'ŒUVRE", value: fmt(mo) },
-            { label: "TOTAL", value: fmt(total) },
+            ...(mo > 0 ? [{ label: "MAIN D'ŒUVRE", value: fmt(mo) }] : []),
+            { label: "TOTAL HT", value: fmt(total) },
           ].map((row) => (
             <tr key={row.label}>
               <td
