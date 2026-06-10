@@ -187,9 +187,22 @@ export default function ProspectionPage() {
     });
     const data = await res.json();
     if (res.ok && data.email) {
-      setProspects((prev) =>
-        prev.map((x) => x.id === p.id ? { ...x, email: data.email } : x)
-      );
+      if (data.guessed && data.suggestions?.length > 1) {
+        // Proposer le choix parmi les emails probables
+        const choix = data.suggestions.join("\n");
+        const msg = data.warning
+          ? `${data.warning}\n\nAdresses probables :\n${choix}\n\nSouhaitez-vous utiliser "${data.email}" ?`
+          : `Souhaitez-vous utiliser "${data.email}" ?`;
+        if (confirm(msg)) {
+          setProspects((prev) =>
+            prev.map((x) => x.id === p.id ? { ...x, email: data.email } : x)
+          );
+        }
+      } else {
+        setProspects((prev) =>
+          prev.map((x) => x.id === p.id ? { ...x, email: data.email } : x)
+        );
+      }
     } else {
       alert(data.error || "Email introuvable sur ce site.");
     }

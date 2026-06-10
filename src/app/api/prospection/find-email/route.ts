@@ -3,46 +3,50 @@ import { updateProspect } from "@/lib/prospection-db";
 
 const EMAIL_REGEX = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
 
-// Domaines génériques à ignorer (images, scripts, etc.)
 const IGNORED_DOMAINS = [
   "sentry.io", "google.com", "googleapis.com", "gstatic.com",
   "facebook.com", "twitter.com", "instagram.com", "linkedin.com",
   "wixpress.com", "wix.com", "squarespace.com", "wordpress.com",
   "cloudflare.com", "jsdelivr.net", "unpkg.com", "amazonaws.com",
-  "example.com", "email.com", "domain.com",
+  "example.com", "email.com", "domain.com", "schema.org",
 ];
+
+const BROWSER_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+  "Accept-Encoding": "gzip, deflate",
+  "Cache-Control": "no-cache",
+};
 
 function scoreEmail(email: string): number {
   const lower = email.toLowerCase();
-  // Favoriser les emails de contact génériques
-  if (lower.startsWith("contact@"))  return 10;
-  if (lower.startsWith("info@"))     return 9;
-  if (lower.startsWith("hello@"))    return 8;
-  if (lower.startsWith("bonjour@"))  return 8;
-  if (lower.startsWith("accueil@"))  return 7;
+  if (lower.startsWith("contact@"))   return 10;
+  if (lower.startsWith("info@"))      return 9;
+  if (lower.startsWith("hello@"))     return 8;
+  if (lower.startsWith("bonjour@"))   return 8;
+  if (lower.startsWith("accueil@"))   return 7;
   if (lower.startsWith("commercial@")) return 7;
   if (lower.startsWith("direction@")) return 6;
-  if (lower.startsWith("admin@"))    return 5;
-  // Pénaliser les emails suspects
-  if (lower.includes("noreply"))     return -5;
-  if (lower.includes("no-reply"))    return -5;
-  if (lower.includes("donotreply"))  return -5;
-  if (lower.includes("example"))     return -10;
-  if (lower.includes(".png") || lower.includes(".jpg") || lower.includes(".gif")) return -20;
+  if (lower.startsWith("admin@"))     return 5;
+  if (lower.includes("noreply"))      return -5;
+  if (lower.includes("no-reply"))     return -5;
+  if (lower.includes("donotreply"))   return -5;
+  if (lower.includes("example"))      return -10;
+  if (/\.(png|jpg|gif|svg|css|js)/.test(lower)) return -20;
   return 3;
 }
 
 async function fetchHtml(url: string): Promise<string> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), 7000);
   try {
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; EmailFinder/1.0)",
-        "Accept": "text/html",
-      },
+      headers: BROWSER_HEADERS,
+      redirect: "follow",
     });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.text();
   } finally {
     clearTimeout(timeout);
@@ -50,35 +54,38 @@ async function fetchHtml(url: string): Promise<string> {
 }
 
 function extractEmails(html: string, siteDomain: string): string[] {
-  // Extraire depuis les liens mailto: en priorité
   const mailtoMatches = html.match(/mailto:([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g) || [];
   const mailtoEmails  = mailtoMatches.map((m) => m.replace("mailto:", "").split("?")[0].toLowerCase());
 
-  // Extraire tous les emails du texte
   const allMatches = html.match(EMAIL_REGEX) || [];
   const allEmails  = allMatches.map((e) => e.toLowerCase());
 
-  // Fusionner, dédupliquer
-  const seen  = new Set<string>();
+  const seen      = new Set<string>();
   const candidates: string[] = [];
   for (const email of [...mailtoEmails, ...allEmails]) {
     if (seen.has(email)) continue;
     seen.add(email);
-    // Ignorer les domaines génériques et les emails pas du site
     const domain = email.split("@")[1];
+    if (!domain) continue;
     if (IGNORED_DOMAINS.some((d) => domain.includes(d))) continue;
     if (email.length > 80) continue;
     candidates.push(email);
   }
 
-  // Trier par score décroissant
-  candidates.sort((a, b) => scoreEmail(b) - scoreEmail(a));
-
-  // Favoriser les emails du même domaine que le site
   const sameDomain = candidates.filter((e) => e.includes(siteDomain));
   const others     = candidates.filter((e) => !e.includes(siteDomain));
 
-  return [...sameDomain, ...others].slice(0, 5);
+  return [...sameDomain, ...others].sort((a, b) => scoreEmail(b) - scoreEmail(a)).slice(0, 5);
+}
+
+// Génère des emails probables à partir du domaine (fallback)
+function guesserEmails(domain: string): string[] {
+  return [
+    `contact@${domain}`,
+    `info@${domain}`,
+    `commercial@${domain}`,
+    `direction@${domain}`,
+  ];
 }
 
 export async function POST(req: NextRequest) {
@@ -92,50 +99,58 @@ export async function POST(req: NextRequest) {
     let url = site_web.trim();
     if (!url.startsWith("http")) url = "https://" + url;
 
-    // Extraire le domaine pour scorer les emails
     const siteDomain = new URL(url).hostname.replace(/^www\./, "");
 
-    let html = "";
+    // Essai 1 : page d'accueil
+    let emails: string[] = [];
+    let siteAccessible = false;
+
     try {
-      html = await fetchHtml(url);
+      const html = await fetchHtml(url);
+      siteAccessible = true;
+      emails = extractEmails(html, siteDomain);
     } catch {
-      // Essayer avec http si https échoue
+      // Essai avec http://
       try {
-        html = await fetchHtml(url.replace("https://", "http://"));
+        const html = await fetchHtml(url.replace("https://", "http://"));
+        siteAccessible = true;
+        emails = extractEmails(html, siteDomain);
       } catch {
-        return NextResponse.json({ error: "Impossible d'accéder au site web du prospect." }, { status: 400 });
+        // Site inaccessible — on passe au fallback
       }
     }
 
-    // Chercher aussi la page /contact si pas d'email trouvé sur la homepage
-    const emails = extractEmails(html, siteDomain);
-    let finalEmails = emails;
-
-    if (emails.length === 0 || scoreEmail(emails[0]) < 3) {
+    // Essai 2 : page /contact si aucun email de qualité
+    if (siteAccessible && (emails.length === 0 || scoreEmail(emails[0]) < 5)) {
       try {
         const contactUrl = url.replace(/\/$/, "") + "/contact";
         const contactHtml = await fetchHtml(contactUrl);
         const contactEmails = extractEmails(contactHtml, siteDomain);
-        // Fusionner
-        const merged = new Set([...emails, ...contactEmails]);
-        finalEmails = Array.from(merged).sort((a, b) => scoreEmail(b) - scoreEmail(a));
-      } catch {
-        // page /contact inaccessible, on garde ce qu'on a
-      }
+        const merged = new Map<string, number>();
+        [...emails, ...contactEmails].forEach((e) => merged.set(e, scoreEmail(e)));
+        emails = Array.from(merged.keys()).sort((a, b) => (merged.get(b)! - merged.get(a)!));
+      } catch { /* page /contact inaccessible */ }
     }
 
-    if (finalEmails.length === 0) {
-      return NextResponse.json({ error: "Aucun email trouvé sur ce site." }, { status: 404 });
+    // Fallback : si toujours rien de bien, proposer des emails probables
+    if (emails.length === 0 || scoreEmail(emails[0]) < 0) {
+      const guesses = guesserEmails(siteDomain);
+      return NextResponse.json({
+        email:       guesses[0],
+        suggestions: guesses,
+        guessed:     true,
+        warning:     siteAccessible
+          ? "Aucun email trouvé sur ce site. Voici des adresses probables à vérifier."
+          : "Site inaccessible. Voici des adresses probables basées sur le domaine.",
+      });
     }
 
-    const best = finalEmails[0];
-
-    // Sauvegarder automatiquement le meilleur email
+    const best = emails[0];
     if (prospect_id) {
       updateProspect(prospect_id, { email: best });
     }
 
-    return NextResponse.json({ email: best, suggestions: finalEmails });
+    return NextResponse.json({ email: best, suggestions: emails });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
