@@ -286,7 +286,7 @@ export default function DevisDoc({ devis, docId = "doc-preview" }: DevisDocProps
             display: "flex",
             justifyContent: "space-between",
             marginTop: "28px",
-            marginBottom: "32px",
+            marginBottom: "90px",
           }}
         >
           <div style={{ textDecoration: "underline", fontWeight: "bold", fontSize: "12px" }}>
