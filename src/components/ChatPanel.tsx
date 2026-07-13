@@ -165,11 +165,8 @@ export default function ChatPanel({ devis, onUpdate, messages, setMessages, onDe
     }
   };
 
-  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      send();
-    }
+  const handleKey = (_e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Envoi uniquement via le bouton ➤ — la touche Entrée insère un saut de ligne.
   };
 
   return (
@@ -315,7 +312,7 @@ export default function ChatPanel({ devis, onUpdate, messages, setMessages, onDe
           </button>
         </div>
         <div className="hidden sm:block text-[10px] text-app-muted mt-1.5">
-          Entrée pour envoyer · Maj+Entrée pour nouvelle ligne
+          Cliquez sur ➤ pour envoyer · Entrée pour une nouvelle ligne
         </div>
       </div>
     </div>
