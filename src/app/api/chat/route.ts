@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import type { ChatMessage, DevisData } from "@/lib/types";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-
 const today = new Date().toISOString().split("T")[0];
 
 const SYSTEM_PROMPT = `Tu es un assistant expert pour Tutto Legno, menuiserie industrielle basée à Abidjan, Côte d'Ivoire. Tu aides à créer et MODIFIER des devis en conversation naturelle.
@@ -65,6 +63,8 @@ export async function POST(req: NextRequest) {
       messages,
       currentDevis,
     }: { messages: ChatMessage[]; currentDevis: DevisData } = await req.json();
+
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
     const contextNote = `═══ ÉTAT ACTUEL DU DEVIS ═══
 ${JSON.stringify(currentDevis, null, 2)}
