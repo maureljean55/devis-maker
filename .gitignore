@@ -12,3 +12,5 @@ tutto_legno_agent/__pycache__/
 tutto_legno_agent/venv/
 tutto_legno_agent/output/prospects.db
 tutto_legno_agent/output/prospects.csv
+.vercel
+.env*
